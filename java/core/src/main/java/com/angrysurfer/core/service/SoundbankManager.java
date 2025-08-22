@@ -68,7 +68,7 @@ public class SoundbankManager implements IBusListener {
             // Add default Java soundbank
             Soundbank defaultSoundbank = synthesizer.getDefaultSoundbank();
             if (defaultSoundbank != null) {
-                String sbName = "Java Internal Soundbank";
+                String sbName = SequencerConstants.DEFAULT_SOUNDBANK;
                 soundbanks.put(sbName, defaultSoundbank);
 
                 // Get or create SynthData for this soundbank
@@ -386,7 +386,7 @@ public class SoundbankManager implements IBusListener {
             // Get soundbank name from instrument
             String soundbankName = instrument.getSoundBank();
             if (soundbankName == null || soundbankName.isEmpty()) {
-                soundbankName = "Java Internal Soundbank";
+                soundbankName = SequencerConstants.DEFAULT_SOUNDBANK;
             }
 
             // Get bank index from instrument
@@ -425,7 +425,7 @@ public class SoundbankManager implements IBusListener {
             String soundbankName = instrument.getSoundBank();
             if (soundbankName == null || soundbankName.isEmpty()) {
                 // Fall back to default soundbank
-                soundbankName = "Java Internal Soundbank";
+                soundbankName = SequencerConstants.DEFAULT_SOUNDBANK;
             }
 
             // Get the bank index from the instrument or default to 0
@@ -775,7 +775,7 @@ public class SoundbankManager implements IBusListener {
      * @param bankIndex The bank index
      * @param preset    The preset number
      */
-    public void applyPresetChangeToPlayer(Player player, String soundbank, Integer bankIndex, Integer preset) {
+    private void applyPresetChangeToPlayer(Player player, String soundbank, Integer bankIndex, Integer preset) {
         if (player == null || player.getInstrument() == null) {
             logger.warn("Cannot apply preset change - player or instrument is null");
             return;
@@ -1246,7 +1246,7 @@ public class SoundbankManager implements IBusListener {
                         instrument.getPreset());
 
                 try {
-                    Synthesizer synth = InternalSynthManager.getInstance().getSynthesizer();
+                    Synthesizer synth = (Synthesizer) player.getInstrument().getDevice(); //  InternalSynthManager.getInstance().getSynthesizer();
                     if (synth != null && synth.isOpen()) {
                         int bankIndex = instrument.getBankIndex() != null ? instrument.getBankIndex() : 0;
                         int preset = instrument.getPreset() != null ? instrument.getPreset() : 0;
@@ -1302,6 +1302,17 @@ public class SoundbankManager implements IBusListener {
                 }
 
                 logger.info("Applied preset for player: {}", player.getName());
+                CommandBus.getInstance().publish(
+                        Commands.PLAYER_PRESET_CHANGE_EVENT,
+                        this,
+                        new PlayerPresetChangeEvent(
+                                this,
+                                player,
+                                instrument.getSoundBank(),
+                                instrument.getBankIndex(),
+                                instrument.getPreset()
+                        )
+                );
                 return success;
             }
         } catch (Exception e) {

@@ -814,6 +814,7 @@ public class UserConfigManager {
                 throw new RuntimeException(e);
             }
 
+            // SoundbankManager.getInstance().updatePlayerSound(player, )
 
             logger.debug("Created default melodic player: {} (preset: {})", player.getName(), preset);
         }

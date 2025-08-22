@@ -198,10 +198,12 @@ public class DrumSequencer implements IBusListener {
      */
     public void reset(boolean preservePositions) {
 
-        this.lastTimingUpdate = null;
         sequenceData.reset(preservePositions);
         sequenceData.setMasterTempo(SessionManager.getInstance().getActiveSession().getTicksPerBeat());
-
+        if (!preservePositions) {
+            currentBar = null;
+            this.lastTimingUpdate = null;
+        }
         // Force the sequencer to generate an event to update visual indicators
         //        if (stepUpdateListener != null) {
         //            for (int drumIndex = 0; drumIndex < SequencerConstants.DRUM_PAD_COUNT; drumIndex++) {
@@ -260,7 +262,7 @@ public class DrumSequencer implements IBusListener {
 
             // Make sure we have a valid minimum value
             if (drumTicksPerStep <= 0) {
-                drumTicksPerStep = 24; // Emergency fallback
+                drumTicksPerStep = SequencerConstants.DEFAULT_MASTER_TEMPO; // Emergency fallback
             }
 
             // Use modulo for stability
@@ -502,17 +504,17 @@ public class DrumSequencer implements IBusListener {
         double ticksPerBeat = timing.getTicksPerBeat();
         if (ticksPerBeat <= 0) {
             logger.warn("Invalid ticksPerBeat value ({}), using default of {}", ticksPerBeat,
-                    SequencerConstants.DEFAULT_TICKS_PER_BEAT);
-            ticksPerBeat = SequencerConstants.DEFAULT_TICKS_PER_BEAT; // Emergency fallback
+                    SequencerConstants.DEFAULT_MASTER_TEMPO);
+            ticksPerBeat = SequencerConstants.DEFAULT_MASTER_TEMPO; // Emergency fallback
         }
 
         // Simplified calculation that works consistently
-        int result = (int) (masterTempo / (ticksPerBeat / 24.0));
+        int result = (int) (masterTempo / (ticksPerBeat / SequencerConstants.DEFAULT_MASTER_TEMPO));
 
         // Add safety check for the final result
         if (result <= 0) {
-            logger.warn("Calculated invalid ticksPerStep ({}), using default of 24", result);
-            result = 24; // Emergency fallback for extreme values
+            logger.warn("Calculated invalid ticksPerStep ({}), using default of 96", result);
+            result = SequencerConstants.DEFAULT_MASTER_TEMPO; // Emergency fallback for extreme values
         }
 
         return result;
@@ -1344,7 +1346,7 @@ public class DrumSequencer implements IBusListener {
         }
 
         // Default to NORMAL timing (24 ticks per beat)
-        return 24;
+        return SequencerConstants.DEFAULT_MASTER_TEMPO;
     }
 
     /**
@@ -1357,7 +1359,7 @@ public class DrumSequencer implements IBusListener {
         if (sequenceData != null) {
             return sequenceData.getTicksPerStep();
         }
-        return 24; // Default
+        return SequencerConstants.DEFAULT_MASTER_TEMPO; // Default
     }
 
     public void ensurePlayerHasInstrument(int i) {

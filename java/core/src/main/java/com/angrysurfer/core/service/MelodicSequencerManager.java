@@ -578,9 +578,7 @@ public class MelodicSequencerManager extends DefaultBusListener {
                 Receiver receiver = ReceiverManager.getInstance().getOrCreateReceiver(deviceName);
                 if (receiver != null) {
                     logger.info("Successfully reconnected sequencer {} to device {}", id, deviceName);
-
-                    // PlayerManager.getInstance().applyInstrumentPreset(player);
-                    PlayerManager.getInstance().initializePlayer(player);
+                    SoundbankManager.getInstance().applyInstrumentPreset(player);
 
                 } else {
                     logger.warn("Failed to get receiver for sequencer {}", id);
@@ -645,7 +643,9 @@ public class MelodicSequencerManager extends DefaultBusListener {
                 }
                 player.getInstrument().setDevice(device);
                 player.getInstrument().setAssignedToPlayer(true);
-            } else PlayerManager.getInstance().initializeInternalInstrument(player, true, player.getId().intValue());
+            } else {
+                PlayerManager.getInstance().initializeInternalInstrument(player, true, player.getId().intValue());
+            }
         }
 
         if (sequencer.getSequenceData() != null) {

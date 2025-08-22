@@ -27,7 +27,7 @@ public class DrumSequenceData {
     // Global sequencing state
     private long tickCounter = 0; // Count ticks
     private int beatCounter = 0; // Count beats
-    private int ticksPerStep = 24; // Base ticks per step
+    private int ticksPerStep = SequencerConstants.DEFAULT_MASTER_TEMPO; // Base ticks per step
     private boolean isPlaying = false; // Global play state
     private int absoluteStep = 0; // Global step counter independent of individual drum steps
     // Per-drum sequencing state

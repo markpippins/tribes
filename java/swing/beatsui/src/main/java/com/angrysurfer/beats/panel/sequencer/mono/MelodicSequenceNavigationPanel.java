@@ -13,7 +13,7 @@ import com.angrysurfer.core.sequencer.MelodicSequenceData;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.TimingDivision;
 import com.angrysurfer.core.service.MelodicSequencerManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SoundbankManager;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -277,8 +277,8 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
             updateSequenceIdDisplay();
 
             // Reset the sequencer to ensure proper step indicator state
-            //sequencer.reset();
-            PlayerManager.getInstance().initializePlayer(sequencer.getPlayer());
+            sequencer.reset();
+            SoundbankManager.getInstance().applyInstrumentPreset(getPlayer());
 
             // Notify that a pattern was loaded
             CommandBus.getInstance().publish(

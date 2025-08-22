@@ -65,7 +65,7 @@ public class InstrumentManager implements IBusListener {
         // Configure as internal instrument
         // Device name for internal synth should be consistent, e.g., Gervill
         internalInstrument.setDeviceName(SequencerConstants.GERVILL);
-        internalInstrument.setSoundBank("Default");
+        internalInstrument.setSoundBank(SequencerConstants.DEFAULT_SOUNDBANK);
         internalInstrument.setBankIndex(0);
         internalInstrument.setPreset(0); // Piano
         internalInstrument.setId(9985L + channel); // Ensure unique ID
@@ -147,7 +147,7 @@ public class InstrumentManager implements IBusListener {
 
         // Configure instrument properties
         instrument.setDeviceName(SequencerConstants.GERVILL);
-        instrument.setSoundBank("Java Internal Soundbank");
+        instrument.setSoundBank(SequencerConstants.DEFAULT_SOUNDBANK);
         instrument.setBankIndex(0);
 
         // Default to appropriate preset based on channel

@@ -80,7 +80,7 @@ public class InternalSynthManager {
                 // Create entry for the default soundbank
                 Soundbank defaultSoundbank = synthesizer.getDefaultSoundbank();
                 if (defaultSoundbank != null) {
-                    String sbName = "Java Internal Soundbank";
+                    String sbName = SequencerConstants.DEFAULT_SOUNDBANK;
                     SynthData synthData = new SynthData(sbName);
 
                     // Add all instruments from default soundbank

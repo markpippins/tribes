@@ -8,6 +8,7 @@ import com.angrysurfer.core.api.*;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Rule;
 import com.angrysurfer.core.model.Session;
+import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingUpdate;
 import com.angrysurfer.core.service.SessionManager;
 
@@ -67,7 +68,7 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
     // Scheduled executor for consistent frame rate
     private ScheduledExecutorService renderTimer;
     // Pre-calculated values
-    private int ppq = 24;
+    private int ppq = SequencerConstants.DEFAULT_MASTER_TEMPO;
     private int beatsPerBar = 4;
     private int ticksPerBar;
     private int totalTicks;

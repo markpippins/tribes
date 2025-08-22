@@ -433,7 +433,7 @@ public class PlayerEditBasicPropertiesPanel extends JPanel {
             try {
                 presetCombo.removeAllItems();
                 String soundbank = soundbankCombo.getSelectedItem() != null ?
-                        soundbankCombo.getSelectedItem().toString() : "Java Internal Soundbank";
+                        soundbankCombo.getSelectedItem().toString() : SequencerConstants.DEFAULT_SOUNDBANK;
 
                 List<String> presetNames = soundbankManager.getPresetNames(soundbank, bank);
 

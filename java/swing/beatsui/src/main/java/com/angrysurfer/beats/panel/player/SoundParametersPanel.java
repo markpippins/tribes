@@ -6,7 +6,6 @@ import com.angrysurfer.beats.util.UIHelper;
 import com.angrysurfer.beats.widget.SoundbankComboRenderer;
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
-import com.angrysurfer.core.event.PlayerPresetChangeEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.preset.BankItem;
@@ -176,7 +175,7 @@ public class SoundParametersPanel extends LivePanel {
                     boolean success = SoundbankManager.getInstance().updatePlayerSound(
                             currentPlayer, soundbankName, bankIndex, item.getNumber());
 
-                    publishPresetChange(currentPlayer, soundbankName, bankIndex, item.getNumber());
+                    //publishPresetChange(currentPlayer, soundbankName, bankIndex, item.getNumber());
                     logger.info("Applied preset to player: {}", success ? "SUCCESS" : "FAILED");
                 }
             }
@@ -219,7 +218,7 @@ public class SoundParametersPanel extends LivePanel {
                     }
 
                     // Create and publish a PresetChangeEvent to ensure the change is applied
-                    publishPresetChange(currentPlayer, soundbankName, bankIndex, presetNumber);
+                    //publishPresetChange(currentPlayer, soundbankName, bankIndex, presetNumber);
                 }
             }
         });
@@ -229,19 +228,19 @@ public class SoundParametersPanel extends LivePanel {
 
     }
 
-    private void publishPresetChange(Player currentPlayer, String soundbankName, Integer bankIndex, Integer presetNumber) {
-        CommandBus.getInstance().publish(
-                Commands.PLAYER_PRESET_CHANGE_EVENT,
-                this,
-                new PlayerPresetChangeEvent(
-                        this,
-                        currentPlayer,
-                        soundbankName,
-                        bankIndex,
-                        presetNumber
-                )
-        );
-    }
+//    private void publishPresetChange(Player currentPlayer, String soundbankName, Integer bankIndex, Integer presetNumber) {
+//        CommandBus.getInstance().publish(
+//                Commands.PLAYER_PRESET_CHANGE_EVENT,
+//                this,
+//                new PlayerPresetChangeEvent(
+//                        this,
+//                        currentPlayer,
+//                        soundbankName,
+//                        bankIndex,
+//                        presetNumber
+//                )
+//        );
+//    }
 
     private void createSoundbankPanel() {
         soundbankPanel = new JPanel(new BorderLayout(5, 0));
@@ -323,8 +322,8 @@ public class SoundParametersPanel extends LivePanel {
                 // Wait a bit to ensure soundbank is fully loaded
                 SwingUtilities.invokeLater(() -> {
                     // Make sure changes are fully applied via both SoundbankManager and PlayerManager
-                    publishPresetChange(currentPlayer, soundbankName,
-                            instrument.getBankIndex(), instrument.getPreset());
+//                    publishPresetChange(currentPlayer, soundbankName,
+//                            instrument.getBankIndex(), instrument.getPreset());
                     // Force direct application of preset changes, essential after soundbank change
                     SoundbankManager.getInstance().applyInstrumentPreset(currentPlayer);
 
@@ -338,10 +337,6 @@ public class SoundParametersPanel extends LivePanel {
                         SoundbankManager.getInstance().playPreviewNote(currentPlayer, 100);
                     }
                 });
-            } else {
-                // Even if soundbank application failed, still try to update UI and apply preset
-                publishPresetChange(currentPlayer, soundbankName,
-                        instrument.getBankIndex(), instrument.getPreset());
             }
         }
     }

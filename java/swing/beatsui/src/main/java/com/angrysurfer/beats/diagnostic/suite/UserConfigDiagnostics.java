@@ -1,16 +1,10 @@
 package com.angrysurfer.beats.diagnostic.suite;
 
-import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.redis.UserConfigHelper;
 import com.angrysurfer.core.service.InstrumentManager;
 import com.angrysurfer.core.service.PlayerManager;
 import com.angrysurfer.core.service.SessionManager;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiSystem;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.Receiver;
 
 /**
  * Helper class for UserConfig diagnostics using direct model objects
@@ -144,7 +138,7 @@ public class UserConfigDiagnostics {
 //            instrument.setName(name);
 //            instrument.setChannel(0);
 //            instrument.setPreset(0);
-//            instrument.setSoundBank("Default");
+//            instrument.setSoundBank("Java Internal Soundbank");
 //            instrument.setDeviceName("Test Device");
 //
 //            // Try to get a real device or create with null device

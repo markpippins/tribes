@@ -38,12 +38,12 @@ public class MelodicSequenceData {
     private Integer octaveShift = 0;
     private TimingDivision timingDivision = TimingDivision.SIXTEENTH;
     private Integer sequencerId; // Add this field to store the sequencer ID
-    //private Integer followSequencerId = -1;
+
     private Integer followNoteSequencerId = -1;
     private Integer followTiltSequencerId = -1;
 
     // Sound-related settings
-    private String soundbankName = "Default";
+    private String soundbankName = SequencerConstants.DEFAULT_SOUNDBANK;
     private Integer bankIndex = 0;
     private Integer preset = 0;
     private String deviceName;
@@ -62,7 +62,7 @@ public class MelodicSequenceData {
     private int[] lengthModifierValues = new int[MAX_BARS];
     private int[] muteBarsValues = new int[MAX_BARS];
 
-    private int[] mutesBarCountValues = new int[MAX_BARS];
+    // private int[] mutesBarCountValues = new int[MAX_BARS];
 
     /**
      * Default constructor
@@ -86,8 +86,7 @@ public class MelodicSequenceData {
         Arrays.fill(muteValues, 0); // Initialize mute values to 0 (unmuted)
         Arrays.fill(lengthModifierValues, 0); // Initialize mute values to 0 (unmuted)
         Arrays.fill(muteBarsValues, 1); // Initialize mute values to 0 (unmuted)
-        Arrays.fill(mutesBarCountValues, 0); // Initialize mute values to 0 (unmuted)
-
+        // Arrays.fill(mutesBarCountValues, 0); // Initialize mute values to 0 (unmuted)
     }
 
     /**
@@ -648,24 +647,24 @@ public class MelodicSequenceData {
     /**
      * Get mute value for step
      */
-    public int getMutesBarsCountValue(int step) {
-        if (step >= 0 && step < MAX_BARS) {
-            return mutesBarCountValues[step];
-        }
-        return 0;
-    }
+//    public int getMutesBarsCountValue(int step) {
+//        if (step >= 0 && step < MAX_BARS) {
+//            return mutesBarCountValues[step];
+//        }
+//        return 0;
+//    }
 
     /**
      * Set mute value for step
      */
-    public void setMutesBarsCountValue(int step, int value) {
-        if (step >= 0 && step < MAX_BARS) {
-            // Mute values are typically 0 (unmuted) or 1 (muted)
-            mutesBarCountValues[step] = value;
-        } else {
-            logger.warn("Attempted to set mute value for invalid step: {}", step);
-        }
-    }
+//    public void setMutesBarsCountValue(int step, int value) {
+//        if (step >= 0 && step < MAX_BARS) {
+//            // Mute values are typically 0 (unmuted) or 1 (muted)
+//            mutesBarCountValues[step] = value;
+//        } else {
+//            logger.warn("Attempted to set mute value for invalid step: {}", step);
+//        }
+//    }
 
     /**
      * Get raw mute values array

@@ -113,16 +113,23 @@ public class MelodicSequencer implements IBusListener {
             return;
         }
 
+        SoundbankManager.getInstance().updatePlayerSound(player, sequenceData.getSoundbankName(),
+                sequenceData.getBankIndex(), sequenceData.getPreset());
+
+
+        currentBar = null;
+        currentStep = 0;
+
         if (getHarmonicTiltValues() == null || getHarmonicTiltValues().isEmpty()) {
             logger.warn("No harmonic tilt values set, using default 0");
             setHarmonicTiltValues(Collections.singletonList(0));
         }
-        currentTilt = getHarmonicTiltValues().get(0);
+        currentTilt = getHarmonicTiltValues().getFirst();
         if (currentStep >= getSequenceData().getPatternLength()) {
             reset();
         }
 
-        PlayerManager.getInstance().initializePlayer(player);
+        SoundbankManager.getInstance().applyInstrumentPreset(player);
 
         isPlaying = getSequenceData().isLooping();
         logger.info("Melodic sequencer {} started playback", id);
@@ -149,7 +156,7 @@ public class MelodicSequencer implements IBusListener {
         int ticksForDivision = sequenceData.getTimingDivision().getTicksPerBeat();
 
         if (ticksForDivision <= 0) {
-            ticksForDivision = 24; // Emergency fallback
+            ticksForDivision = SequencerConstants.DEFAULT_MASTER_TEMPO; // Emergency fallback
         }
 
         if (tick % ticksForDivision == 0) {
@@ -382,9 +389,7 @@ public class MelodicSequencer implements IBusListener {
 
         } else {
             logger.info("Creating new player for melodic sequencer {}", id);
-            // player = RedisService.getInstance().newNote();
-            player = new Note();
-            player.setId(RedisService.getInstance().getPlayerHelper().getNextPlayerId());
+            player = RedisService.getInstance().newNote();
             player.setRules(new HashSet<>()); // Ensure rules are initialized
             player.setMinVelocity(60);
             player.setMaxVelocity(127);
@@ -427,22 +432,12 @@ public class MelodicSequencer implements IBusListener {
 
         InstrumentWrapper instrument = player.getInstrument();
 
-        if (!instrument.isInternalSynth() && instrument.getChannel() != SequencerConstants.MIDI_DRUM_CHANNEL) {
+        if (instrument.isInternalSynth() && instrument.getChannel() != SequencerConstants.MIDI_DRUM_CHANNEL) {
+            PlayerManager.getInstance().initializeInternalInstrument(player, false, getId());
 
-            if (sequenceData.getSoundbankName() != null) {
-                instrument.setSoundBank(sequenceData.getSoundbankName());
-            }
-
-            if (sequenceData.getBankIndex() != null) {
-                instrument.setBankIndex(sequenceData.getBankIndex());
-            }
-
-            if (sequenceData.getPreset() != null) {
-                instrument.setPreset(sequenceData.getPreset());
-            }
-
-            // PlayerManager.getInstance().applyInstrumentPreset(player);
-            // initializePlayer(player);
+            SoundbankManager.getInstance().updatePlayerSound(player, sequenceData.getSoundbankName(),
+                    sequenceData.getBankIndex(), sequenceData.getPreset());
+            //SoundbankManager.getInstance().applyInstrumentPreset(player);
         }
 
         logger.debug("Applied sequence data settings to instrument: preset:{}, bank:{}, soundbank:{}",
@@ -525,7 +520,7 @@ public class MelodicSequencer implements IBusListener {
             case Commands.REFRESH_ALL_INSTRUMENTS, Commands.PLAYER_PRESET_CHANGE_EVENT,
                  Commands.PLAYER_PRESET_CHANGED, Commands.PLAYER_INSTRUMENT_CHANGE_EVENT,
                  Commands.REFRESH_PLAYER_INSTRUMENT -> {
-                PlayerManager.getInstance().initializePlayer(player);
+                SoundbankManager.getInstance().applyInstrumentPreset(player);
                 MelodicSequenceModifier.updateInstrumentSettingsInSequenceData(this);
             }
 

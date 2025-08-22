@@ -114,31 +114,31 @@ public class PlayerManager implements IBusListener {
         }
     }
 
-    public void initializePlayer(Player player) {
-        // PlayerManager.getInstance().applyInstrumentPreset(player);
-
-        // Add this explicit program change to ensure the preset is applied:
-        if (player != null && player.getInstrument() != null) {
-            try {
-                // Force program change through both regular channel and direct MIDI
-                InstrumentWrapper instrument = player.getInstrument();
-                int channel = player.getChannel();
-                int bankIndex = instrument.getBankIndex() != null ? instrument.getBankIndex() : 0;
-                int preset = instrument.getPreset() != null ? instrument.getPreset() : 0;
-
-                player.getInstrument().controlChange(0, (bankIndex >> 7) & MidiControlMessageEnum.POLY_MODE_ON);
-                player.getInstrument().controlChange(32, bankIndex & MidiControlMessageEnum.POLY_MODE_ON);
-                player.getInstrument().programChange(preset, 0);
-
-
-                CommandBus.getInstance().publish(Commands.PLAYER_UPDATE_EVENT, this, new PlayerUpdateEvent(this, player));
-                logger.info("Explicitly set instrument {} to bank {} program {} on channel {}",
-                        instrument.getName(), bankIndex, preset, channel);
-            } catch (Exception e) {
-                logger.error("Error applying program change: {}", e.getMessage(), e);
-            }
-        }
-    }
+//    public void initializePlayer(Player player) {
+//        PlayerManager.getInstance().applyInstrumentPreset(player);
+//
+//        // Add this explicit program change to ensure the preset is applied:
+//        if (player != null && player.getInstrument() != null) {
+//            try {
+//                // Force program change through both regular channel and direct MIDI
+//                InstrumentWrapper instrument = player.getInstrument();
+//                int channel = player.getChannel();
+//                int bankIndex = instrument.getBankIndex() != null ? instrument.getBankIndex() : 0;
+//                int preset = instrument.getPreset() != null ? instrument.getPreset() : 0;
+//
+//                player.getInstrument().controlChange(0, (bankIndex >> 7) & MidiControlMessageEnum.POLY_MODE_ON);
+//                player.getInstrument().controlChange(32, bankIndex & MidiControlMessageEnum.POLY_MODE_ON);
+//                player.getInstrument().programChange(preset, 0);
+//
+//
+//                CommandBus.getInstance().publish(Commands.PLAYER_UPDATE_EVENT, this, new PlayerUpdateEvent(this, player));
+//                logger.info("Explicitly set instrument {} to bank {} program {} on channel {}",
+//                        instrument.getName(), bankIndex, preset, channel);
+//            } catch (Exception e) {
+//                logger.error("Error applying program change: {}", e.getMessage(), e);
+//            }
+//        }
+//    }
 
     private void handlePlayerSelectionEvent(Command action) {
 //        if (action.getData() instanceof PlayerSelectionEvent event && event.player() != null) {

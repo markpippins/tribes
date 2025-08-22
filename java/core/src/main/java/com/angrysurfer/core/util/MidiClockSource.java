@@ -22,8 +22,8 @@ public class MidiClockSource implements IBusListener {
     private final TimingBus timingBus = TimingBus.getInstance();
     private final CommandBus commandBus = CommandBus.getInstance();
     public int metronomeChannel = SequencerConstants.MIDI_DRUM_CHANNEL;
-    private boolean metronomeAudible = false;
-    private int metronomeNote = 60;
+    private boolean metronomeAudible = true;
+    private int metronomeNote = 37;
     private int metronomeVelocity = 100;
     private Sequence sequence;
     private Sequencer sequencer;
