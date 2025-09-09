@@ -99,7 +99,7 @@ public class MainPanel extends LivePanel implements AutoCloseable, IBusListener 
         tabbedPane.addTab("Song", createSongPanel());
         tabbedPane.addTab("Mixer", createMixerPanel());
         tabbedPane.addTab("Synth", internalSynthControlPanel);
-        // tabbedPane.addTab("Matrix", createModulationMatrixPanel());
+        tabbedPane.addTab("Matrix", createModulationMatrixPanel());
         tabbedPane.addTab("Players", new SessionPanel());
 
         JPanel pianoPanel = new JPanel(new BorderLayout());

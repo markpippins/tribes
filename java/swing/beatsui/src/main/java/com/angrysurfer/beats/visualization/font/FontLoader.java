@@ -1,4 +1,4 @@
-package com.angrysurfer.beats.font;
+package com.angrysurfer.beats.visualization.font;
 
 import java.io.InputStream;
 import java.util.HashMap;
