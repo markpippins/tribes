@@ -7,6 +7,8 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisConfig {
     private static final LogManager logger = LogManager.getInstance();
+    public static final String REDIS_HOST = "localhost";
+    public static final int REDIS_PORT = 6379;
     
     public static JedisPool createJedisPool() {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -17,7 +19,7 @@ public class RedisConfig {
         poolConfig.setTestOnReturn(true);
         
         try {
-            JedisPool pool = new JedisPool(poolConfig, "localhost", 6379);
+            JedisPool pool = new JedisPool(poolConfig, REDIS_HOST, REDIS_PORT);
             logger.info("RedisConfig", "Successfully created Redis connection pool");
             return pool;
         } catch (Exception e) {

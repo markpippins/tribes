@@ -2,6 +2,7 @@ package com.angrysurfer.core.redis;
 
 import com.angrysurfer.core.api.*;
 import com.angrysurfer.core.config.FrameState;
+import com.angrysurfer.core.config.RedisConfig;
 import com.angrysurfer.core.config.TableState;
 import com.angrysurfer.core.config.UserConfig;
 import com.angrysurfer.core.model.*;
@@ -83,7 +84,7 @@ public class RedisService implements IBusListener {
         poolConfig.setMaxTotal(10);
         poolConfig.setMaxIdle(5);
         poolConfig.setMinIdle(1);
-        return new JedisPool(poolConfig, "localhost", 6379);
+        return new JedisPool(poolConfig, RedisConfig.REDIS_HOST, RedisConfig.REDIS_PORT);
     }
 
     private ObjectMapper createObjectMapper() {
