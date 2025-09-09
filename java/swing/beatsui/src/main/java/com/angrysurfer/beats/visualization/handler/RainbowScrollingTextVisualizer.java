@@ -3,12 +3,13 @@ package com.angrysurfer.beats.visualization.handler;
 import java.awt.Color;
 import java.util.Random;
 
-import com.angrysurfer.beats.font.FontLoader;
-import com.angrysurfer.beats.font.LedFont;
+import javax.swing.JButton;
+
 import com.angrysurfer.beats.visualization.DisplayType;
 import com.angrysurfer.beats.visualization.IVisualizationHandler;
 import com.angrysurfer.beats.visualization.VisualizationCategory;
-import javax.swing.JButton;
+import com.angrysurfer.beats.visualization.font.FontLoader;
+import com.angrysurfer.beats.visualization.font.LedFont;
 
 public class RainbowScrollingTextVisualizer implements IVisualizationHandler {
     private int position = 0;
