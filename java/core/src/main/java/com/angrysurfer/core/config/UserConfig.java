@@ -22,4 +22,5 @@ public class UserConfig {
     private int configVersion = 1;
     private Date lastUpdated;
     private String name;
+    private boolean metronomeAudible = true;
 }

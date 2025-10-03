@@ -28,8 +28,7 @@ public class DrumSequencer implements IBusListener {
     private static final Logger logger = LoggerFactory.getLogger(DrumSequencer.class);
 
     // Reference to the data container
-    // Add as static fields in both sequencer classes
-    private static final ScheduledExecutorService SHARED_NOTE_SCHEDULER = Executors.newScheduledThreadPool(2);
+
 
     private final ShortMessage reuseableMessage = new javax.sound.midi.ShortMessage();
 
@@ -426,10 +425,9 @@ public class DrumSequencer implements IBusListener {
 
         if (nudge > 0) {
             // Delayed note
-            SHARED_NOTE_SCHEDULER.schedule(() -> {
-                player.noteOn(finalNoteNumber, finalActualVelocity, finalDecay);
-                publishNoteEvent(finalDrumIndex, finalActualVelocity, finalDecay);
-            }, nudge, TimeUnit.MILLISECONDS);
+            player.getInstrument().scheduleNoteOff(finalNoteNumber, finalActualVelocity, finalDecay + nudge);
+            player.noteOn(finalNoteNumber, finalActualVelocity);
+            publishNoteEvent(finalDrumIndex, finalActualVelocity, finalDecay);
         } else {
             // Immediate note
             player.noteOn(finalNoteNumber, finalActualVelocity, decay);

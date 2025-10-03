@@ -778,6 +778,8 @@ public class MainPanel extends LivePanel implements AutoCloseable, IBusListener 
             }
         }, new String[]{Commands.METRONOME_STARTED, Commands.METRONOME_STOPPED});
 
+        metronomeButton.setSelected(UserConfigManager.getInstance().getCurrentConfig().isMetronomeAudible());
+
         return metronomeButton;
     }
 

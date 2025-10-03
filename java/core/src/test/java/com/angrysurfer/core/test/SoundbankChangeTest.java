@@ -1,16 +1,19 @@
 package com.angrysurfer.core.test;
 
+import java.util.List;
+
+import javax.sound.midi.Soundbank;
+import javax.sound.midi.Synthesizer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.model.InstrumentWrapper;
+import com.angrysurfer.core.model.Note;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.service.InternalSynthManager;
 import com.angrysurfer.core.service.PlayerManager;
 import com.angrysurfer.core.service.SoundbankManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.Soundbank;
-import javax.sound.midi.Synthesizer;
-import java.util.List;
 
 /**
  * Test class to verify soundbank functionality
@@ -45,9 +48,9 @@ public class SoundbankChangeTest {
             }
 
             // Step 3: Create test player
-            Player testPlayer = new Player();
+            Player testPlayer = new Note();
             testPlayer.setName("TestPlayer");
-            testPlayer.setChannel(TEST_CHANNEL);
+            // testPlayer.setChannel(TEST_CHANNEL);
 
             // Set up instrument
             InstrumentWrapper instrument = new InstrumentWrapper();

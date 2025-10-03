@@ -1,14 +1,35 @@
 package com.angrysurfer.beats.panel.sequencer.mono;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.util.function.Consumer;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.Symbols;
 import com.angrysurfer.beats.panel.player.SoundParametersPanel;
 import com.angrysurfer.beats.panel.sequencer.MuteSequencerPanel;
 import com.angrysurfer.beats.panel.sequencer.OffsetSequencerPanel2;
 import com.angrysurfer.beats.panel.sequencer.TiltSequencerPanel;
-import com.angrysurfer.beats.panel.session.SessionControlPanel;
+import com.angrysurfer.beats.presenter.MelodicSequencerPresenter;
 import com.angrysurfer.beats.util.UIHelper;
-import com.angrysurfer.core.api.*;
-import com.angrysurfer.core.event.MelodicScaleSelectionEvent;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
 import com.angrysurfer.core.event.MelodicSequencerEvent;
 import com.angrysurfer.core.event.NoteEvent;
 import com.angrysurfer.core.event.PlayerRefreshEvent;
@@ -18,18 +39,13 @@ import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.TimingDivision;
 import com.angrysurfer.core.service.MelodicSequencerManager;
 import com.angrysurfer.core.service.SoundbankManager;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.function.Consumer;
 
 @Getter
 @Setter
-public class MelodicSequencerPanel extends JPanel implements IBusListener {
+public class MelodicSequencerPanel extends JPanel {
 
     private static final Logger logger = LoggerFactory.getLogger(MelodicSequencerPanel.class);
 
@@ -69,6 +85,8 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
     /**
      * Constructor for MelodicSequencerPanel
      */
+    private final MelodicSequencerPresenter presenter;
+
     public MelodicSequencerPanel(int index, Consumer<NoteEvent> noteEventConsumer) {
         super(new BorderLayout());
 
@@ -84,13 +102,15 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
         // Apply instrument preset immediately to ensure correct sound
         SoundbankManager.getInstance().applyInstrumentPreset(sequencer.getPlayer());
 
+        presenter = new MelodicSequencerPresenter(sequencer, this);
+
         // Initialize the UI
         initialize();
 
         // Try to load the first sequence for this sequencer
         loadFirstSequenceIfExists();
 
-        CommandBus.getInstance().register(this, new String[]{
+        CommandBus.getInstance().register(presenter, new String[]{
                 Commands.DRUM_PAD_SELECTED,
                 Commands.DRUM_STEP_SELECTED,
                 Commands.DRUM_INSTRUMENTS_UPDATED,
@@ -103,7 +123,9 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
                 Commands.MELODIC_SEQUENCE_UPDATED,
                 Commands.MELODIC_SEQUENCE_CREATED,
                 Commands.SCALE_SELECTED,
-                Commands.ROOT_NOTE_SELECTED
+                Commands.ROOT_NOTE_SELECTED,
+                Commands.PATTERN_UPDATED,
+                Commands.INSTRUMENT_CHANGED
         });
     }
 
@@ -420,11 +442,15 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
         }
     }
 
+    public ScalePanel getScalePanel() {
+        return scalePanel;
+    }
+
     /**
      * Synchronize all UI elements with the current sequencer state
      */
 
-    private void syncUIWithSequencer() {
+    public void syncUIWithSequencer() {
         updatingUI = true;
         try {
             // Update sequence parameters panel
@@ -465,89 +491,5 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
     /**
      * Modify onAction to prevent the infinite scale selection loop
      */
-    @Override
-    public void onAction(Command action) {
-        if (action == null || action.getCommand() == null) {
-            return;
-        }
 
-        switch (action.getCommand()) {
-            // Arrow syntax for all cases
-            case Commands.MELODIC_SEQUENCE_LOADED,
-                 Commands.MELODIC_SEQUENCE_CREATED,
-                 Commands.MELODIC_SEQUENCE_SELECTED,
-                 Commands.MELODIC_SEQUENCE_UPDATED -> {
-                // Check if this event applies to our sequencer
-                if (action.getData() instanceof MelodicSequencerEvent event) {
-                    if (event.getSequencerId().equals(sequencer.getId())) {
-                        logger.info("Updating UI for sequence event: {}", action.getCommand());
-                        syncUIWithSequencer();
-                    }
-                } else {
-                    // If no specific sequencer event data, update anyway
-                    syncUIWithSequencer();
-                }
-            }
-            case Commands.ROOT_NOTE_SELECTED -> {
-                getSequencer().getSequenceData().setRootNoteFromString((String) action.getData());
-                getSequencer().getPlayer().setRootNote(getSequencer().getSequenceData().getRootNote());
-                syncUIWithSequencer();
-            }
-
-            case Commands.SCALE_SELECTED -> {
-                // Only update if this event is for our specific sequencer or from the global
-                // controller
-                if (action.getData() instanceof MelodicScaleSelectionEvent(Integer sequencerId, String scale)) {
-                    // Check if this event is for our sequencer
-                    if (sequencerId != null && sequencerId.equals(sequencer.getId())) {
-                        // Update the scale in the sequencer
-                        sequencer.getSequenceData().setScale(scale);
-
-                        // Update the UI without publishing new events
-                        if (scalePanel != null) {
-                            scalePanel.setSelectedScale(scale);
-                        }
-
-                        // Log the specific change
-                        logger.debug("Set scale to {} for sequencer {}", scale, sequencer.getId());
-                    }
-                }
-                // Handle global scale changes from session panel (separate implementation)
-                else if (action.getData() instanceof String scale &&
-                        (action.getSender() instanceof SessionControlPanel)) {
-                    // This is a global scale change from the session panel
-                    sequencer.getSequenceData().setScale(scale);
-
-                    // Update UI without publishing new events
-                    if (scalePanel != null)
-                        scalePanel.setSelectedScale(scale);
-
-                    logger.debug("Set scale to {} from global session change", scale);
-                }
-            }
-
-            case Commands.PATTERN_UPDATED -> {
-                // Your existing PATTERN_UPDATED handler code
-                // Only handle events from our sequencer to avoid loops
-                if (action.getSender() == sequencer) {
-                    syncUIWithSequencer();
-                }
-            }
-
-            case Commands.INSTRUMENT_CHANGED -> {
-                // Check if this update is for our sequencer's player
-                // if (action.getData() instanceof Player &&
-                // sequencer != null &&
-                // sequencer.getPlayer() != null &&
-                // sequencer.getPlayer().getId().equals(((Player) action.getData()).getId())) {
-
-                // SwingUtilities.invokeLater(this::updateInstrumentInfoLabel);
-                // }
-            }
-
-            default -> {
-                // Optional default case
-            }
-        }
-    }
 }

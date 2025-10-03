@@ -179,3 +179,7 @@ java/logs/beats.log
 java/core/src/main/java/com/angrysurfer/core/api/db/Database.java.bak
 java/logs/.gitnore
 java/logs/beats-2025-09-07.0.log
+java/spring/logs/beats.log
+java/core/target/test-classes/logback-test.xml
+java/swing/beatsui/target/classes/logback.xml
+java/swing/beatsui/target/classes/logback.xml

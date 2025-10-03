@@ -24,18 +24,9 @@ public class InternalSynthManager {
 
     private static final Logger logger = LoggerFactory.getLogger(InternalSynthManager.class);
     private static InternalSynthManager instance;
-    // Map of synth IDs to preset information
-    private final Map<Long, SynthData> synthDataMap = new HashMap<>();
-    // Default channel for melodic sounds
-    // Use LinkedHashMap to preserve insertion order
-    private final LinkedHashMap<String, Soundbank> soundbanks = new LinkedHashMap<>();
-    private final ScheduledExecutorService noteOffScheduler = Executors.newScheduledThreadPool(2);
-    // Map to store available banks for each soundbank (by name)
-    private final Map<String, List<Integer>> availableBanksMap = new HashMap<>();
-    // Add synthesizer as a central instance
-    private Synthesizer synthesizer;
-    // Add these fields for performance
     private MidiChannel[] cachedChannels;
+
+
 
     /**
      * Initialize the manager and register command listeners
@@ -55,7 +46,6 @@ public class InternalSynthManager {
 
     public void initialize() {
         try {
-            initializeSynthesizer();
             initializeSynthData();
             loadDefaultSoundbank();
         } catch (Exception e) {
@@ -67,48 +57,7 @@ public class InternalSynthManager {
      * Initialize synthesizer data structures
      */
     public void initializeSynthData() {
-        try {
-            // Clear existing data first
-            synthDataMap.clear();
-
-            // We need a synthesizer instance
-            if (synthesizer == null) {
-                initializeSynthesizer();
-            }
-
-            if (synthesizer != null) {
-                // Create entry for the default soundbank
-                Soundbank defaultSoundbank = synthesizer.getDefaultSoundbank();
-                if (defaultSoundbank != null) {
-                    String sbName = SequencerConstants.DEFAULT_SOUNDBANK;
-                    SynthData synthData = new SynthData(sbName);
-
-                    // Add all instruments from default soundbank
-                    for (Instrument instrument : defaultSoundbank.getInstruments()) {
-                        synthData.addInstrument(instrument);
-                    }
-
-                    // Store in map with the synthesizer ID
-                    long synthId = System.identityHashCode(synthesizer);
-                    synthDataMap.put(synthId, synthData);
-
-                    // Also add to soundbanks collection
-                    soundbanks.put(sbName, defaultSoundbank);
-
-                    // Cache available banks
-                    availableBanksMap.put(sbName, synthData.getAvailableBanks());
-
-                    logger.info("Initialized synthesizer data with {} instruments",
-                            synthData.getInstruments().size());
-                } else {
-                    logger.warn("No default soundbank available in synthesizer");
-                }
-            } else {
-                logger.warn("No synthesizer available for initialization");
-            }
-        } catch (Exception e) {
-            logger.error("Error initializing synth data: " + e.getMessage(), e);
-        }
+        new SoundbankLoader().initializeSynthData();
     }
 
     /**
@@ -116,46 +65,8 @@ public class InternalSynthManager {
      */
     public void ensureInternalSynthAvailable() {
         if (!checkInternalSynthAvailable()) {
-            initializeSynthesizer();
+            SynthProvider.getSynthesizer();
             logger.info("Initialized internal synth for drum sequencer");
-        }
-    }
-
-    /**
-     * Initialize the synthesizer
-     * This should be called during startup
-     */
-    private void initializeSynthesizer() {
-        try {
-            // Try to find Gervill synthesizer first
-            MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
-            MidiDevice.Info gervillInfo = null;
-
-            for (MidiDevice.Info info : infos) {
-                if (info.getName().contains(SequencerConstants.GERVILL)) {
-                    gervillInfo = info;
-                    break;
-                }
-            }
-
-            if (gervillInfo != null) {
-                synthesizer = (Synthesizer) MidiSystem.getMidiDevice(gervillInfo);
-            }
-
-            // If Gervill not found, get default synthesizer
-            if (synthesizer == null) {
-                synthesizer = MidiSystem.getSynthesizer();
-            }
-
-            if (synthesizer != null && !synthesizer.isOpen()) {
-                synthesizer.open();
-            }
-
-            if (synthesizer != null && synthesizer.isOpen()) {
-                logger.info("Synthesizer initialized: {}", synthesizer.getDeviceInfo().getName());
-            }
-        } catch (Exception e) {
-            logger.error("Error initializing synthesizer: " + e.getMessage(), e);
         }
     }
 
@@ -165,10 +76,7 @@ public class InternalSynthManager {
      * @return The MIDI synthesizer
      */
     public Synthesizer getSynthesizer() {
-        if (synthesizer == null || !synthesizer.isOpen()) {
-            initializeSynthesizer();
-        }
-        return synthesizer;
+        return SynthProvider.getSynthesizer();
     }
 
     /**
@@ -178,13 +86,7 @@ public class InternalSynthManager {
      * @throws MidiUnavailableException if the synthesizer is unavailable
      */
     public MidiDevice getInternalSynthDevice() throws MidiUnavailableException {
-        if (synthesizer == null) {
-            synthesizer = MidiSystem.getSynthesizer();
-            synthesizer.open();
-            cachedChannels = synthesizer.getChannels();
-        }
-
-        return synthesizer;
+        return SynthProvider.getSynthesizer();
     }
 
     /**
@@ -242,14 +144,6 @@ public class InternalSynthManager {
      * @return A fully configured InstrumentWrapper for the internal synth
      */
     public InstrumentWrapper createInternalInstrument(String name, int channel, MidiDevice device) {
-        if (synthesizer == null) {
-            initializeSynthesizer();
-            if (synthesizer == null) {
-                logger.error("Failed to initialize synthesizer");
-                return null;
-            }
-        }
-
         // Generate a name if none provided
         String instrumentName = name != null ? name : channel == SequencerConstants.MIDI_DRUM_CHANNEL ? "Internal Drums" : "Internal Synth " + channel;
 
@@ -340,27 +234,8 @@ public class InternalSynthManager {
 
             boolean success = false;
 
+            Synthesizer synthesizer = SynthProvider.getSynthesizer();
             if (synthesizer != null && synthesizer.isOpen()) {
-                // First apply through the synth's MidiChannels directly
-//                MidiChannel[] channels = synthesizer.getChannels();
-//                if (channels != null && channel < channels.length) {
-//                    channels[channel].controlChange(0, (bankIndex >> 7) & MidiControlMessageEnum.POLY_MODE_ON);
-//                    channels[channel].controlChange(32, bankIndex & MidiControlMessageEnum.POLY_MODE_ON);
-//                    channels[channel].programChange(preset);
-//
-//                    // For percussion channel, ensure drum mode is enabled
-//                    if (channel == SequencerConstants.MIDI_DRUM_CHANNEL) {
-//                        channels[channel].controlChange(0, 120);
-//                    }
-//
-//                    logger.info("Applied preset via direct synth channel: ch={}, bank={}, program={}",
-//                            channel, bankIndex, preset);
-//
-//                    success = true;
-//                } else {
-//                    logger.warn("Could not access synthesizer channel {}", channel);
-//                }
-
                 // Also try through Receiver for completeness
                 try {
                     Receiver receiver = instrument.getReceiver();
@@ -417,7 +292,7 @@ public class InternalSynthManager {
 
         return SequencerConstants.GERVILL.equals(instrument.getDeviceName()) ||
                 "Java Sound Synthesizer".equals(instrument.getDeviceName()) ||
-                (instrument.getDevice() == synthesizer);
+                (instrument.getDevice() == SynthProvider.getSynthesizer());
     }
 
 
@@ -498,43 +373,7 @@ public class InternalSynthManager {
      * @param channel    MIDI channel
      */
     public void playNote(int note, int velocity, int durationMs, int channel) {
-        if (synthesizer == null) {
-            initializeSynthesizer();
-        }
-
-        if (synthesizer == null || !synthesizer.isOpen()) {
-            return;
-        }
-
-        try {
-            // Cache channels for performance
-            if (cachedChannels == null) {
-                cachedChannels = synthesizer.getChannels();
-            }
-
-            // Safety bounds check
-            if (channel < 0 || channel >= cachedChannels.length) {
-                return;
-            }
-
-            final MidiChannel midiChannel = cachedChannels[channel];
-            if (midiChannel != null) {
-                // Direct method call - much faster than creating threads
-                midiChannel.noteOn(note, velocity);
-
-                // Schedule note off with the shared executor
-                noteOffScheduler.schedule(() -> {
-                    try {
-                        midiChannel.noteOff(note);
-                    } catch (Exception e) {
-                        // Ignore errors in note-off
-                    }
-                }, durationMs, TimeUnit.MILLISECONDS);
-            }
-        } catch (Exception e) {
-            // Just log at trace level - don't slow down playback
-            logger.trace("Error playing note: {}", e.getMessage());
-        }
+        new NotePlayer().playNote(note, velocity, durationMs, channel);
     }
 
     /**
@@ -543,6 +382,7 @@ public class InternalSynthManager {
      * @param channel The MIDI channel
      */
     public void allNotesOff(int channel) {
+        Synthesizer synthesizer = SynthProvider.getSynthesizer();
         if (synthesizer == null || !synthesizer.isOpen()) {
             return;
         }
@@ -568,16 +408,7 @@ public class InternalSynthManager {
      * Load the default soundbank and any custom soundbanks
      */
     public void loadDefaultSoundbank() {
-        if (synthesizer == null) {
-            initializeSynthesizer();
-            if (synthesizer == null) {
-                logger.error("Failed to initialize synthesizer to load soundbanks");
-                return;
-            }
-        }
-
-        // Delegate to SoundbankManager
-        SoundbankManager.getInstance().initializeSoundbanks();
+        new SoundbankLoader().loadDefaultSoundbank();
     }
 
     /**
@@ -626,11 +457,12 @@ public class InternalSynthManager {
      * Load a soundbank file
      */
     public String loadSoundbank(File file) {
-        return SoundbankManager.getInstance().loadSoundbank(file);
+        return new SoundbankLoader().loadSoundbank(file);
     }
 
 
     public void setControlChange(int channel, int ccNumber, int value) {
+        Synthesizer synthesizer = SynthProvider.getSynthesizer();
         if (synthesizer == null || !synthesizer.isOpen()) {
             logger.warn("Cannot send CC - synthesizer is not available");
             return;
@@ -665,7 +497,7 @@ public class InternalSynthManager {
         }
 
         // Direct device instance comparison if available
-        if (synthesizer != null && instrument.getDevice() == synthesizer) {
+        if (SynthProvider.getSynthesizer() != null && instrument.getDevice() == SynthProvider.getSynthesizer()) {
             return true;
         }
 
@@ -687,9 +519,7 @@ public class InternalSynthManager {
      */
     public boolean checkInternalSynthAvailable() {
         // Try to ensure the synthesizer is initialized
-        if (synthesizer == null) {
-            initializeSynthesizer();
-        }
+        Synthesizer synthesizer = SynthProvider.getSynthesizer();
 
         // Check if synthesizer is available and open
         boolean isAvailable = synthesizer != null && synthesizer.isOpen();

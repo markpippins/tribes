@@ -11,6 +11,8 @@ import javax.sound.midi.*;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import com.angrysurfer.core.service.UserConfigManager;
+
 @Getter
 @Setter
 public class MidiClockSource implements IBusListener {
@@ -22,7 +24,7 @@ public class MidiClockSource implements IBusListener {
     private final TimingBus timingBus = TimingBus.getInstance();
     private final CommandBus commandBus = CommandBus.getInstance();
     public int metronomeChannel = SequencerConstants.MIDI_DRUM_CHANNEL;
-    private boolean metronomeAudible = true;
+    private boolean metronomeAudible = UserConfigManager.getInstance().getCurrentConfig().isMetronomeAudible();
     private int metronomeNote = 37;
     private int metronomeVelocity = 100;
     private Sequence sequence;
@@ -287,6 +289,11 @@ public class MidiClockSource implements IBusListener {
         } catch (Exception e) {
             // Handle error
         }
+    }
+
+    public void setMetronomeAudible(boolean metronomeAudible) {
+        this.metronomeAudible = metronomeAudible;
+        UserConfigManager.getInstance().getCurrentConfig().setMetronomeAudible(metronomeAudible);
     }
 
     @Override

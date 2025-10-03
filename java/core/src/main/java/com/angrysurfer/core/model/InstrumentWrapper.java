@@ -30,10 +30,15 @@ public final class InstrumentWrapper implements Serializable {
 
     private static final String LOG_MSG_CHANNEL_PART = ", channel ";
 
-    private static ScheduledExecutorService noteOffScheduler;
+    private static final ScheduledExecutorService noteOffScheduler;
 
     static {
-        initializeScheduler();
+        noteOffScheduler = Executors.newScheduledThreadPool(4, r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setDaemon(true);
+            t.setName("InstrumentWrapper-NoteOffScheduler");
+            return t;
+        });
     }
 
     @JsonIgnore
@@ -85,46 +90,6 @@ public final class InstrumentWrapper implements Serializable {
     }
 
     // Constructors
-    private static void initializeScheduler() {
-        if (noteOffScheduler == null || noteOffScheduler.isShutdown()) {
-            noteOffScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = Executors.defaultThreadFactory().newThread(r);
-                t.setDaemon(true);
-                try {
-                    t.setName("NoteOffScheduler-Thread-" + t.threadId());
-                } catch (NoSuchMethodError e) {
-                    t.setName("NoteOffScheduler-Thread");
-                }
-                return t;
-            });
-            if (logger.isInfoEnabled()) {
-                logger.info("NoteOffScheduler initialized or re-initialized.");
-            }
-        }
-    }
-
-    public static void shutdownScheduler() {
-        if (noteOffScheduler != null && !noteOffScheduler.isShutdown()) {
-            noteOffScheduler.shutdown();
-            try {
-                if (!noteOffScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    noteOffScheduler.shutdownNow();
-                    if (logger.isWarnEnabled()) {
-                        logger.warn("NoteOffScheduler did not terminate gracefully, forcing shutdown.");
-                    }
-                }
-            } catch (InterruptedException ie) {
-                noteOffScheduler.shutdownNow();
-                Thread.currentThread().interrupt();
-                if (logger.isErrorEnabled()) {
-                    logger.error("NoteOffScheduler shutdown interrupted.", ie);
-                }
-            }
-            if (logger.isInfoEnabled()) {
-                logger.info("NoteOffScheduler has been shut down.");
-            }
-        }
-    }
 
     public boolean isInternalSynth() {
         return (Objects.nonNull(getDeviceName()) && getDeviceName().equals(SequencerConstants.GERVILL) ||
@@ -252,7 +217,6 @@ public final class InstrumentWrapper implements Serializable {
     }
 
     public void scheduleNoteOff(final int noteNumber, final int velocity, long delayMs) {
-        initializeScheduler();
         try {
             noteOffScheduler.schedule(() -> noteOff(noteNumber, velocity), delayMs, TimeUnit.MILLISECONDS);
             if (logger.isDebugEnabled()) {

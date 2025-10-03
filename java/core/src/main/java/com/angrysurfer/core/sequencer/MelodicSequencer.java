@@ -1,28 +1,55 @@
 package com.angrysurfer.core.sequencer;
 
-import com.angrysurfer.core.api.*;
-import com.angrysurfer.core.event.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.ShortMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.event.MelodicScaleSelectionEvent;
+import com.angrysurfer.core.event.MelodicSequencerEvent;
+import com.angrysurfer.core.event.NoteEvent;
+import com.angrysurfer.core.event.PatternSwitchEvent;
+import com.angrysurfer.core.event.StepUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Note;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.*;
+import com.angrysurfer.core.service.DeviceManager;
+import com.angrysurfer.core.service.MelodicSequencerManager;
+import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SessionManager;
+import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.UserConfigManager;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.ShortMessage;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
 public class MelodicSequencer implements IBusListener {
+
+    private static final ScheduledExecutorService SHARED_NOTE_SCHEDULER = Executors.newScheduledThreadPool(2);
 
     private static final Logger logger = LoggerFactory.getLogger(MelodicSequencer.class);
 
@@ -147,9 +174,12 @@ public class MelodicSequencer implements IBusListener {
     }
 
     public void processTick(Long tick) {
+        System.out.println("MelodicSequencer.processTick: " + tick);
         if (!isPlaying || tick == null) {
             return;
         }
+
+        logger.info("MelodicSequencer processTick: " + tick);
 
         tickCounter = tick;
 
@@ -169,7 +199,7 @@ public class MelodicSequencer implements IBusListener {
             }
 
             if (player.getEnabled() & player.getLevel() > 0)
-                triggerNote(currentStep);
+                SHARED_NOTE_SCHEDULER.schedule(() -> triggerNote(currentStep), 0, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -297,6 +327,7 @@ public class MelodicSequencer implements IBusListener {
 
 
     public void triggerNote(int stepIndex) {
+        logger.info("MelodicSequencer triggerNote: " + stepIndex);
         // Skip if not playing or muted (fast check before doing any other processing)
         if (!isPlaying || !sequenceData.isStepActive(stepIndex) || player.isMuted())
             return;

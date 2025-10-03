@@ -32,16 +32,7 @@
     </dependency>
 
     <!-- Add these logging dependencies -->
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.2.6</version>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-core</artifactId>
-      <version>1.2.6</version>
-    </dependency>
+
     <!-- Jakarta Persistence API -->
     <dependency>
         <groupId>jakarta.persistence</groupId>
