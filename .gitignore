@@ -179,3 +179,10 @@ java/logs/beats.log
 java/core/src/main/java/com/angrysurfer/core/api/db/Database.java.bak
 java/logs/.gitnore
 java/logs/beats-2025-09-07.0.log
+.vscode/launch.json
+.gitignore
+.vscode/settings.json
+java/swing/beatsui/logs/beats.log
+logs/beats-2025-10-11.0.log
+logs/beats.log
+web/alpha/package-lock.json
