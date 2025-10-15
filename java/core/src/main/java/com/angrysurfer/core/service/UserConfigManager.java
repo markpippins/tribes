@@ -789,8 +789,8 @@ public class UserConfigManager {
 
             // Create the melodic player
             Note player = new Note();
+            player.initialize("Note " + (i + 1), SessionManager.getInstance().getActiveSession(), null, null);
             player.setId(RedisService.getInstance().getNextPlayerId());
-            player.setName("Note " + (i + 1));
             player.setIsDefault(true);
             player.setMelodicPlayer(true);
             player.setRootNote(rootNote);

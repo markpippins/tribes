@@ -86,8 +86,7 @@ public abstract class AbstractBus {
     }
 
     public void publish(String command, Object sender, Object data) {
-        // System.out.println("AbstractBus: Publishing command " + command + " to " +
-        // listeners.size() + " listeners");
+    // logger.debug("AbstractBus: Publishing command {} to {} listeners", command, listeners.size());
         Command cmd = new Command(command, sender, data);
 
         List<IBusListener> listeners = listenerMap.get(command);
@@ -186,7 +185,7 @@ public abstract class AbstractBus {
                                     listener.getClass().getSimpleName(),
                                     action.getCommand(),
                                     e.getMessage()));
-                    e.printStackTrace();
+                    logger.error("Error in listener {} handling command {}", listener.getClass().getSimpleName(), action.getCommand(), e);
                 }
             }
         }
@@ -204,13 +203,13 @@ public abstract class AbstractBus {
                                     listener.getClass().getSimpleName(),
                                     action.getCommand(),
                                     e.getMessage()));
-                    e.printStackTrace();
+                    logger.error("Error in wildcard listener {} handling command {}", listener.getClass().getSimpleName(), action.getCommand(), e);
                 }
             }
         }
 
-        // Remove debug log that was causing console spam
-        // System.out.println("CommandBus: processing " + action.toString() + ", listeners: " + listeners.size());
+    // Remove debug log that was causing console spam
+    // logger.debug("CommandBus: processing {} listeners: {}", action.toString(), listeners.size());
     }
 
     /**

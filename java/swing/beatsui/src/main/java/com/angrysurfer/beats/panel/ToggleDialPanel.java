@@ -2,6 +2,8 @@ package com.angrysurfer.beats.panel;
 
 import com.angrysurfer.beats.widget.Dial;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -17,6 +19,8 @@ import java.util.List;
  */
 @Getter
 public class ToggleDialPanel extends JPanel {
+
+    private static final Logger logger = LoggerFactory.getLogger(ToggleDialPanel.class);
 
     private final Dial dial;
     private final JToggleButton toggleButton;
@@ -251,12 +255,12 @@ public class ToggleDialPanel extends JPanel {
 // // Add listeners for both components
 // toggleDial.addDialChangeListener(e -> {
 //     ToggleDialPanel source = (ToggleDialPanel) e.getSource();
-//     System.out.println("Dial value changed: " + source.getValue());
+//     logger.debug("Dial value changed: {}", source.getValue());
 // });
 
 // toggleDial.addToggleActionListener(e -> {
 //     ToggleDialPanel source = (ToggleDialPanel) e.getSource();
-//     System.out.println("Toggle changed: " + source.isSelected());
+//     logger.debug("Toggle changed: {}", source.isSelected());
 
 //     // Optionally change toggle button color based on state
 //     if (source.isSelected()) {

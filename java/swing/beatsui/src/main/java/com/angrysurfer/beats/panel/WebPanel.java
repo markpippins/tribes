@@ -7,6 +7,7 @@ import java.io.IOException;
 
 class WebPanel extends JPanel {
     private final JEditorPane webView;
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(WebPanel.class);
 
     public WebPanel() {
         setLayout(new BorderLayout());
@@ -25,7 +26,7 @@ class WebPanel extends JPanel {
                 try {
                     webView.setPage(e.getURL());
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    logger.error("Failed to navigate to hyperlink", ex);
                 }
             }
         });

@@ -1,21 +1,40 @@
 package com.angrysurfer.core.util;
 
-import com.angrysurfer.core.api.*;
+import java.util.Objects;
+
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.Sequencer;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Track;
+import javax.sound.midi.Transmitter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.service.SessionManager;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import javax.sound.midi.*;
-import java.util.Objects;
-import java.util.logging.Logger;
 
 @Getter
 @Setter
 public class MidiClockSource implements IBusListener {
 
-    private static final Logger logger = Logger.getLogger(MidiClockSource.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(MidiClockSource.class);
     static boolean isInitialized = false;
     // Use singletons directly instead of constructor injection
     // private final LogManager logManager = LogManager.getInstance();
@@ -32,18 +51,17 @@ public class MidiClockSource implements IBusListener {
     private synchronized void initialize() {
         // if (!isInitialized)
         try {
-            // System.out.println("SequencerManager: Initializing...");
+            if (logger.isDebugEnabled()) logger.debug("SequencerManager: Initializing...");
             setupSequencer();
-            // System.out.println("SequencerManager: Sequencer setup complete");
+            if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequencer setup complete");
             setupSynthesizer();
-            // System.out.println("SequencerManager: Synthesizer setup complete");
+            if (logger.isDebugEnabled()) logger.debug("SequencerManager: Synthesizer setup complete");
             createSequence();
-            // System.out.println("SequencerManager: Sequence created");
+            if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequence created");
             connectDevices();
-            // System.out.println("SequencerManager: Devices connected");
+            if (logger.isDebugEnabled()) logger.debug("SequencerManager: Devices connected");
         } catch (Exception e) {
-            System.err.println("SequencerManager: Error initializing MIDI: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("SequencerManager: Error initializing MIDI: {}", e.getMessage(), e);
         }
 
         CommandBus.getInstance().register(this, new String[]{
@@ -53,7 +71,7 @@ public class MidiClockSource implements IBusListener {
 
     // Optimize buffer size and latency settings
     private void setupSequencer() throws MidiUnavailableException {
-        // System.out.println("SequencerManager: Setting up sequencer...");
+    if (logger.isDebugEnabled()) logger.debug("SequencerManager: Setting up sequencer...");
         sequencer = MidiSystem.getSequencer(false);
         if (sequencer == null) {
             throw new MidiUnavailableException("Could not obtain MIDI sequencer");
@@ -65,7 +83,7 @@ public class MidiClockSource implements IBusListener {
             System.setProperty("javax.sound.midi.Sequencer#RealTimeSequencing", "true");
             System.setProperty("javax.sound.midi.Sequencer#Latency", "1");
         } catch (Exception e) {
-            System.err.println("Could not set sequencer properties: " + e.getMessage());
+            logger.warn("Could not set sequencer properties: {}", e.getMessage(), e);
         }
 
         sequencer.open();
@@ -74,17 +92,17 @@ public class MidiClockSource implements IBusListener {
         try {
             // These are general properties that might work across implementations
             // if (sequencer instanceof javax.sound.midi.RealTimeSequencer) {
-            //     // System.out.println("Using real-time sequencer");
+            //     // Using real-time sequencer (implementation note)
             // }
 
             // Additional sequencer tuning
             sequencer.setMicrosecondPosition(0);
             sequencer.setTickPosition(0);
         } catch (Exception e) {
-            System.err.println("Warning: Could not optimize sequencer: " + e.getMessage());
+            logger.warn("Warning: Could not optimize sequencer: {}", e.getMessage(), e);
         }
 
-        // System.out.println("SequencerManager: Sequencer opened successfully");
+    if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequencer opened successfully");
     }
 
     private void setupSynthesizer() throws MidiUnavailableException {
@@ -159,36 +177,35 @@ public class MidiClockSource implements IBusListener {
         initialize();
 
         try {
-            // System.out.println("SequencerManager: Attempting to start sequencer");
+            if (logger.isDebugEnabled()) logger.debug("SequencerManager: Attempting to start sequencer");
             if (sequencer != null && !sequencer.isRunning()) {
-                // System.out.println("SequencerManager: Sequencer exists and is not running");
+                if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequencer exists and is not running");
                 // Important: Make sure any active session is properly initialized
                 if (getActiveSession() != null) {
-                    // System.out.println("SequencerManager: Active session found: " + getActiveSession().getId());
+                    if (logger.isDebugEnabled() && getActiveSession() != null) logger.debug("SequencerManager: Active session found: {}", getActiveSession().getId());
                     getActiveSession().beforeStart();
-                    // System.out.println("SequencerManager: Called session.beforeStart()");
+                    if (logger.isDebugEnabled()) logger.debug("SequencerManager: Called session.beforeStart()");
                 } else {
-                    // System.out.println("SequencerManager: No active session found!");
+                    if (logger.isDebugEnabled()) logger.debug("SequencerManager: No active session found!");
                 }
 
                 // Start sequencer
                 sequencer.start();
-                // System.out.println("SequencerManager: Sequencer started");
+                if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequencer started");
 
                 // Publish state change - CRITICAL for UI updates
                 CommandBus.getInstance().publish(Commands.TRANSPORT_STATE_CHANGED, this, true);
-                // System.out.println("SequencerManager: Published TRANSPORT_STATE_CHANGED event");
+                if (logger.isDebugEnabled()) logger.debug("SequencerManager: Published TRANSPORT_STATE_CHANGED event");
             } else {
-                // System.out.println("SequencerManager: Cannot start - sequencer is null or already running");
+                if (logger.isDebugEnabled()) logger.debug("SequencerManager: Cannot start - sequencer is null or already running");
                 if (sequencer == null) {
-                    // System.out.println("SequencerManager: Sequencer is null!");
+                    if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequencer is null!");
                 } else {
-                    // System.out.println("SequencerManager: Sequencer is already running!");
+                    if (logger.isDebugEnabled()) logger.debug("SequencerManager: Sequencer is already running!");
                 }
             }
         } catch (Exception e) {
-            System.err.println("SequencerManager: Error starting sequencer: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("SequencerManager: Error starting sequencer: {}", e.getMessage(), e);
         }
     }
 
@@ -201,10 +218,10 @@ public class MidiClockSource implements IBusListener {
 
                 // Publish state change - CRITICAL for UI updates
                 CommandBus.getInstance().publish(Commands.TRANSPORT_STATE_CHANGED, this, false);
-                // System.out.println("SequencerManager: Stopped sequencer, publishing state change event");
+                if (logger.isDebugEnabled()) logger.debug("SequencerManager: Stopped sequencer, publishing state change event");
             }
         } catch (Exception e) {
-            logger.warning("Error stopping sequencer: " + e.getMessage());
+            logger.warn("Error stopping sequencer: {}", e.getMessage(), e);
         }
     }
 
@@ -224,7 +241,7 @@ public class MidiClockSource implements IBusListener {
             }
             // logManager.info("MIDI resources cleaned up");
         } catch (Exception e) {
-            logger.warning("Error cleaning up MIDI resources: " + e.getMessage());
+            logger.warn("Error cleaning up MIDI resources: {}", e.getMessage(), e);
         }
     }
 

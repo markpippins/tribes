@@ -1,18 +1,41 @@
 package com.angrysurfer.beats;
 
-import com.angrysurfer.beats.panel.TransportPanel;
-import com.angrysurfer.beats.util.UIHelper;
-import com.angrysurfer.beats.widget.VuMeter;
-import com.angrysurfer.core.api.*;
-import com.angrysurfer.core.model.Player;
-import lombok.Getter;
-import lombok.Setter;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.beats.panel.TransportPanel;
+import com.angrysurfer.beats.util.UIHelper;
+import com.angrysurfer.beats.widget.VuMeter;
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
+import com.angrysurfer.core.api.TimingBus;
+import com.angrysurfer.core.model.Player;
+
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -53,6 +76,7 @@ public class StatusBar extends JPanel implements IBusListener {
     private Player currentPlayer;
     private Timer performanceMonitorTimer;
     private Random random = new Random(); // For demo level meter movement
+    private static final Logger logger = LoggerFactory.getLogger(StatusBar.class);
 
     public StatusBar() {
         super();
@@ -296,8 +320,7 @@ public class StatusBar extends JPanel implements IBusListener {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error in StatusBar.onAction: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error in StatusBar.onAction: {}", e.getMessage(), e);
         }
     }
 

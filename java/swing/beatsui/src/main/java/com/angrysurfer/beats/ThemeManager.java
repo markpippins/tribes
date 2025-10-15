@@ -1,5 +1,14 @@
 package com.angrysurfer.beats;
 
+import java.util.Arrays;
+
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.formdev.flatlaf.FlatDarculaLaf;
@@ -9,9 +18,6 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.intellijthemes.FlatAllIJThemes;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
-
-import javax.swing.*;
-import java.util.Arrays;
 
 public class ThemeManager {
     private static ThemeManager instance;
@@ -96,7 +102,7 @@ public class ThemeManager {
             SwingUtilities.updateComponentTreeUI(mainFrame);
             notifyThemeChange(className);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            org.slf4j.LoggerFactory.getLogger(ThemeManager.class).error("Failed to set theme {}", className, ex);
         }
     }
 
@@ -107,7 +113,7 @@ public class ThemeManager {
             SwingUtilities.updateComponentTreeUI(mainFrame);
             notifyThemeChange(laf.getClass().getName());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            org.slf4j.LoggerFactory.getLogger(ThemeManager.class).error("Failed to set theme via supplier", ex);
         }
     }
 

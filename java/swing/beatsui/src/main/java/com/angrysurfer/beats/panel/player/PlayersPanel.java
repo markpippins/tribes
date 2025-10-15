@@ -767,8 +767,7 @@ public class PlayersPanel extends JPanel {
                     CommandBus.getInstance().publish(Commands.PLAYER_SELECTION_EVENT, this, player);
             }
         } catch (Exception ex) {
-            logger.error("Error in player selection: " + ex.getMessage());
-            ex.printStackTrace();
+            logger.error("Error in player selection: {}", ex.getMessage(), ex);
         }
     }
 

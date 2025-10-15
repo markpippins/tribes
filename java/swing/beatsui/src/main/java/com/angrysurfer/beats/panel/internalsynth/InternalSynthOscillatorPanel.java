@@ -17,8 +17,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 
-import com.angrysurfer.beats.widget.Dial;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.util.UIHelper;
+import com.angrysurfer.beats.widget.Dial;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -30,6 +33,7 @@ import lombok.Setter;
 @Setter
 
 public class InternalSynthOscillatorPanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(InternalSynthOscillatorPanel.class);
     private final Synthesizer synthesizer;
     private int midiChannel;
     private final int oscillatorIndex;
@@ -182,9 +186,7 @@ public class InternalSynthOscillatorPanel extends JPanel {
 
             if (enabledToggle.isSelected()) {
                 setControlChange(baseCCForOsc, waveformType * 25);
-                System.out.println("Osc " + (oscillatorIndex + 1) + " waveform: " + 
-                        waveformCombo.getSelectedItem() + " (CC" + baseCCForOsc + "=" + 
-                        (waveformType * 25) + ")");
+        logger.info("Osc {} waveform: {} (CC{}={})", oscillatorIndex + 1, waveformCombo.getSelectedItem(), baseCCForOsc, (waveformType * 25));
 
                 // Force program change on main channel if this is oscillator 1
                 if (oscillatorIndex == 0) {
@@ -200,32 +202,28 @@ public class InternalSynthOscillatorPanel extends JPanel {
 
             if (enabledToggle.isSelected()) {
                 setControlChange(baseCCForOsc + 1, value);
-                System.out.println("Osc " + (oscillatorIndex + 1) + " octave: " + octave +
-                        " (CC" + (baseCCForOsc + 1) + "=" + value + ")");
+        logger.info("Osc {} octave: {} (CC{}={})", oscillatorIndex + 1, octave, (baseCCForOsc + 1), value);
             }
         });
 
         detuneDial.addChangeListener(e -> {
             if (enabledToggle.isSelected()) {
                 setControlChange(baseCCForOsc + 2, detuneDial.getValue());
-                System.out.println("Osc " + (oscillatorIndex + 1) + " tune: " + detuneDial.getValue() +
-                        " (CC" + (baseCCForOsc + 2) + ")");
+        logger.info("Osc {} tune: {} (CC{})", oscillatorIndex + 1, detuneDial.getValue(), (baseCCForOsc + 2));
             }
         });
 
         brightnessDialDial.addChangeListener(e -> {
             if (enabledToggle.isSelected()) {
                 setControlChange(baseCCForOsc + 3, brightnessDialDial.getValue());
-                System.out.println("Osc " + (oscillatorIndex + 1) + " brightness: " + 
-                        brightnessDialDial.getValue() + " (CC" + (baseCCForOsc + 3) + ")");
+        logger.info("Osc {} brightness: {} (CC{})", oscillatorIndex + 1, brightnessDialDial.getValue(), (baseCCForOsc + 3));
             }
         });
 
         volumeDial.addChangeListener(e -> {
             if (enabledToggle.isSelected()) {
                 setControlChange(baseCCForOsc + 4, volumeDial.getValue());
-                System.out.println("Osc " + (oscillatorIndex + 1) + " volume: " + 
-                        volumeDial.getValue() + " (CC" + (baseCCForOsc + 4) + ")");
+        logger.info("Osc {} volume: {} (CC{})", oscillatorIndex + 1, volumeDial.getValue(), (baseCCForOsc + 4));
             } else {
                 // Force volume to zero if disabled
                 setControlChange(baseCCForOsc + 4, 0);
@@ -238,9 +236,7 @@ public class InternalSynthOscillatorPanel extends JPanel {
             int volume = enabled ? volumeDial.getValue() : 0;
             setControlChange(baseCCForOsc + 4, volume);
 
-            System.out.println("Osc " + (oscillatorIndex + 1) + " " + 
-                    (enabled ? "enabled" : "disabled") + " (CC" + (baseCCForOsc + 4) + 
-                    "=" + volume + ")");
+        logger.info("Osc {} {} (CC{}={})", oscillatorIndex + 1, (enabled ? "enabled" : "disabled"), (baseCCForOsc + 4), volume);
 
             // If enabling, also re-send all other settings
             if (enabled) {
@@ -321,8 +317,7 @@ public class InternalSynthOscillatorPanel extends JPanel {
                     channel.controlChange(ccNumber, value);
                 }
             } catch (Exception e) {
-                System.err.println("Error setting CC " + ccNumber + " on channel " + 
-                        (midiChannel + 1) + ": " + e.getMessage());
+                logger.error("Error setting CC {} on channel {}: {}", ccNumber, (midiChannel + 1), e.getMessage(), e);
             }
         }
     }

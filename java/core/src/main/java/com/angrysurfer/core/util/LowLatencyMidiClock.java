@@ -1,15 +1,19 @@
 package com.angrysurfer.core.util;
 
-import com.angrysurfer.core.model.Session;
-import com.angrysurfer.core.sequencer.SequencerConstants;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.model.Session;
+import com.angrysurfer.core.sequencer.SequencerConstants;
+
 public class LowLatencyMidiClock {
+    private static final Logger logger = LoggerFactory.getLogger(LowLatencyMidiClock.class);
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
             r -> {
                 Thread t = new Thread(r, "MIDI-Clock");
@@ -57,7 +61,7 @@ public class LowLatencyMidiClock {
             }
         } catch (Exception e) {
             // Catch exceptions to prevent scheduler from stopping
-            e.printStackTrace();
+            logger.error("Exception in MIDI clock tick", e);
         }
     }
 

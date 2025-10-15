@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD Suppressions 1.1//EN"
+    "https://checkstyle.org/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+    <!-- Allow System stream interception and UI stack capture -->
+    <suppress files=".*LoggingPanel\.java" checks="RegexpSingleline"/>
+    <suppress files=".*UIErrorHandler\.java" checks="RegexpSingleline"/>
+    <suppress files=".*DiagnosticLogBuilder\.java" checks="RegexpSingleline"/>
+    <!-- Demo and commented-out examples are allowed -->
+    <suppress files=".*SequencerDemo\.java" checks="RegexpSingleline"/>
+</suppressions>

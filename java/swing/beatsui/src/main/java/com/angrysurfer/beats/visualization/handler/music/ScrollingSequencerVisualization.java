@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ScrollingSequencerVisualization extends LockHandler implements IVisualizationHandler, IBusListener {
     // Frame rate for visual updates (60fps for smoother animation)
@@ -73,43 +75,49 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
     private int totalTicks;
     private int columnsPerBeat;
 
+    private static final Logger logger = LoggerFactory.getLogger(ScrollingSequencerVisualization.class);
+
     public ScrollingSequencerVisualization() {
         // Register for timing events
-        TimingBus.getInstance().register(this);
-        CommandBus.getInstance().register(this, new String[]{
-                Commands.TRANSPORT_START,
-                Commands.TRANSPORT_STOP,
-                Commands.METRONOME_START,
-                Commands.METRONOME_STOP,
-                Commands.TRANSPORT_STATE_CHANGED,
-                Commands.TIMING_UPDATE,
-                Commands.UPDATE_TEMPO,
-                Commands.TIMING_PARAMETERS_CHANGED,
-                Commands.SESSION_CHANGED,
-                Commands.PLAYER_ADDED,
-                Commands.PLAYER_DELETED,
-                Commands.RULE_ADDED,
-                Commands.RULE_EDITED,
-                Commands.RULE_DELETED,
-                Commands.SESSION_UPDATED,
-                Commands.PLAYER_UPDATE_EVENT
-        });
+        try {
+            TimingBus.getInstance().register(this);
+            CommandBus.getInstance().register(this, new String[]{
+                    Commands.TRANSPORT_START,
+                    Commands.TRANSPORT_STOP,
+                    Commands.METRONOME_START,
+                    Commands.METRONOME_STOP,
+                    Commands.TRANSPORT_STATE_CHANGED,
+                    Commands.TIMING_UPDATE,
+                    Commands.UPDATE_TEMPO,
+                    Commands.TIMING_PARAMETERS_CHANGED,
+                    Commands.SESSION_CHANGED,
+                    Commands.PLAYER_ADDED,
+                    Commands.PLAYER_DELETED,
+                    Commands.RULE_ADDED,
+                    Commands.RULE_EDITED,
+                    Commands.RULE_DELETED,
+                    Commands.SESSION_UPDATED,
+                    Commands.PLAYER_UPDATE_EVENT
+            });
 
-        // Initialize with current state
-        Session activeSession = SessionManager.getInstance().getActiveSession();
-        if (activeSession != null) {
-            isPlaying = activeSession.isRunning();
-            currentTick = activeSession.getTick();
-            currentBeat = activeSession.getBeat();
-            currentBar = activeSession.getBar();
+            // Initialize with current state
+            Session activeSession = SessionManager.getInstance().getActiveSession();
+            if (activeSession != null) {
+                isPlaying = activeSession.isRunning();
+                currentTick = activeSession.getTick();
+                currentBeat = activeSession.getBeat();
+                currentBar = activeSession.getBar();
 
-            // Pre-calculate timing values
-            updateTimingParameters(activeSession);
+                // Pre-calculate timing values
+                updateTimingParameters(activeSession);
 
-            // Start the render timer if playing
-            if (isPlaying) {
-                startRenderTimer();
+                // Start the render timer if playing
+                if (isPlaying) {
+                    startRenderTimer();
+                }
             }
+        } catch (Exception e) {
+            logger.error("Failed to initialize ScrollingSequencerVisualization", e);
         }
     }
 
@@ -209,7 +217,8 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
                 }
             } catch (Exception e) {
                 // Prevent any exceptions from breaking the visualization
-                e.printStackTrace();
+                // Log the exception for diagnostics
+                java.util.logging.Logger.getLogger(ScrollingSequencerVisualization.class.getName()).log(java.util.logging.Level.SEVERE, "Visualization update failed", e);
             }
         });
     }
@@ -318,7 +327,7 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
     private void evaluatePlayerActivations(int cols) {
         if (activePlayers == null || activePlayers.length == 0) return;
 
-        // System.out.println("Evaluating activations for " + activePlayers.length + " players across " + totalTicks + " ticks");
+    // logger.debug("Evaluating activations for {} players across {} ticks", activePlayers.length, totalTicks);
 
         // Initialize activation map
         playerActivations = new boolean[activePlayers.length][cols];
@@ -329,14 +338,14 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
             Set<Rule> rules = player.getRules();
 
             if (rules == null || rules.isEmpty()) {
-                // System.out.println("Player " + player.getName() + " has no rules, skipping");
+                // logger.debug("Player {} has no rules, skipping", player.getName());
                 continue;
             }
 
-            // System.out.println("Evaluating player: " + player.getName() + " with " + rules.size() + " rules");
+            // logger.debug("Evaluating player: {} with {} rules", player.getName(), rules.size());
 
             // Count how many hits we find
-            int hitCount = 0;
+            // int hitCount = 0; // unused - removed
 
             // For each column in our grid
             for (int col = 0; col < cols; col++) {
@@ -357,7 +366,6 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
                         1);                   // part (1-based, default to 1)
 
                 if (willPlay) {
-                    hitCount++;
 
                     // Ensure we have space in our array
                     if (col < playerActivations[playerIndex].length) {
@@ -389,7 +397,7 @@ public class ScrollingSequencerVisualization extends LockHandler implements IVis
                 }
             }
 
-            // System.out.println("Player " + player.getName() + " has " + hitCount + " activations");
+            // Debug: activations evaluated
         }
     }
 

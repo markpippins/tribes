@@ -1,6 +1,19 @@
 package com.angrysurfer.core.service;
 
-import com.angrysurfer.core.api.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
@@ -8,17 +21,15 @@ import com.angrysurfer.core.model.Rule;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.SongEngine;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.*;
-import java.util.logging.Logger;
 
 @Getter
 @Setter
 public class SessionManager implements IBusListener {
 
-    private static final Logger logger = Logger.getLogger(SessionManager.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(SessionManager.class);
     private static SessionManager instance;
 
     private final RedisService redisService = RedisService.getInstance();
@@ -92,17 +103,17 @@ public class SessionManager implements IBusListener {
     }
 
     public void initialize() {
-        // System.out.println("SessionManager: Initializing...");
+        // logger.debug("SessionManager: Initializing...");
         logger.info("Initializing session manager");
 
         // Instead of creating SessionManager, directly load session
         loadActiveSession();
 
-        if (activeSession != null) {
-            System.out.println("SessionManager: Session details:");
-            System.out.println(" - Players: " + (activeSession.getPlayers() != null ?
-                    activeSession.getPlayers().size() : 0));
-        }
+    if (activeSession != null) {
+        logger.info("SessionManager: Session details:");
+        logger.info(" - Players: {}", (activeSession.getPlayers() != null ?
+            activeSession.getPlayers().size() : 0));
+    }
 
         logSessionState(getActiveSession());
 
@@ -208,7 +219,7 @@ public class SessionManager implements IBusListener {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error handling command: {}", e.getMessage(), e);
         }
     }
 
@@ -357,8 +368,9 @@ public class SessionManager implements IBusListener {
             // Set the active session
             this.activeSession = session;
         } catch (Exception e) {
-            logger.severe("Failed to load session: " + e.getMessage());
+            logger.error("Failed to load session: {}", e.getMessage(), e);
             this.activeSession = new Session();
+            this.activeSession.initialize();
         }
     }
 
@@ -518,10 +530,10 @@ public class SessionManager implements IBusListener {
                     logger.info("Player deleted: " + playerId);
                     deletedCount++;
                 } else {
-                    logger.warning("Failed to remove player " + playerId + " from session");
+                    logger.warn("Failed to remove player {} from session", playerId);
                 }
             } else {
-                logger.warning("Player not found for deletion: " + playerId);
+                logger.warn("Player not found for deletion: {}", playerId);
             }
         }
 

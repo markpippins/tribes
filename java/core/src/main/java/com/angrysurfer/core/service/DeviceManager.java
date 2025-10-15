@@ -1,5 +1,24 @@
 package com.angrysurfer.core.service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Synthesizer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
@@ -7,13 +26,6 @@ import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.exception.MidiDeviceException;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class DeviceManager implements IBusListener {
 
@@ -28,8 +40,8 @@ public class DeviceManager implements IBusListener {
 
     // Private constructor for singleton
     private DeviceManager() {
-        refreshDeviceList();
-        CommandBus.getInstance().register(this, new String[]{Commands.REFRESH_MIDI_DEVICES});
+        // Keep constructor lightweight. Call initialize() during startup to
+        // populate device lists and register for events.
     }
 
     // Singleton accessor
@@ -210,6 +222,15 @@ public class DeviceManager implements IBusListener {
         logger.info("Refreshing MIDI device list");
         availableOutputDevices.clear();
         availableOutputDevices.addAll(getMidiOutDevices());
+    }
+
+    /**
+     * Explicit initialization for DeviceManager. Populates the device list and
++     * registers for command events. Call during application startup.
+     */
+    public synchronized void initialize() {
+        refreshDeviceList();
+        CommandBus.getInstance().register(this, new String[]{Commands.REFRESH_MIDI_DEVICES});
     }
 
     // Add proper cleanup

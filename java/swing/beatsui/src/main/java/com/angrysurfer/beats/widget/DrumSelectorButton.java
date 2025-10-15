@@ -1,5 +1,25 @@
 package com.angrysurfer.beats.widget;
 
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.panel.MainPanel;
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
@@ -7,12 +27,9 @@ import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.event.DrumPadSelectionEvent;
 import com.angrysurfer.core.sequencer.DrumSequencer;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
 
 /**
  * A specialized DrumButton for the drum sequencer that handles selection state
@@ -20,6 +37,9 @@ import java.awt.event.*;
 @Getter
 @Setter
 public class DrumSelectorButton extends JButton implements IBusListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(DrumSelectorButton.class);
+
 
     private int drumPadIndex;
     private DrumSequencer sequencer;
@@ -76,13 +96,13 @@ public class DrumSelectorButton extends JButton implements IBusListener {
 
                 // Only handle selection if mouse is still over the button
                 if (contains(e.getPoint())) {
-                    System.out.println("DrumSequencerButton: selecting pad " + drumPadIndex);
+                    logger.info("DrumSequencerButton: selecting pad {}", drumPadIndex);
 
                     // Call the sequencer's selectDrumPad method
                     if (sequencer != null) {
                         sequencer.selectDrumPad(drumPadIndex);
                     } else {
-                        System.err.println("Error: sequencer is null!");
+                        logger.error("Error: sequencer is null!");
                     }
                 }
             }
@@ -233,8 +253,8 @@ public class DrumSelectorButton extends JButton implements IBusListener {
         // Force repaint to make selection visible
         repaint();
 
-        // Log the selection for debugging
-        System.out.println("DrumSequencerButton " + drumPadIndex + " selected: " + selected);
+    // Log the selection for debugging
+    logger.info("DrumSequencerButton {} selected: {}", drumPadIndex, selected);
     }
 
     /**
@@ -259,8 +279,8 @@ public class DrumSelectorButton extends JButton implements IBusListener {
     private MainPanel findMainPanel() {
         Container parent = getParent();
         while (parent != null) {
-            if (parent instanceof MainPanel) {
-                return (MainPanel) parent;
+            if (parent instanceof MainPanel mainPanel) {
+                return mainPanel;
             }
             parent = parent.getParent();
         }

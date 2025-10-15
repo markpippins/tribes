@@ -22,8 +22,9 @@ public class SessionDeserializer extends StdDeserializer<Session> {
     public Session deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
         JsonNode node = jp.getCodec().readTree(jp);
         
-        // Create a new session that will properly initialize all transient fields
-        Session session = new Session();
+    // Create a new session that will properly initialize all transient fields
+    Session session = new Session();
+    session.initialize();
         
         // Read ID and name properties
         if (node.has("id")) {

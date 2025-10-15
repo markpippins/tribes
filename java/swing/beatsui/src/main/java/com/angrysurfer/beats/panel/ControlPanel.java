@@ -737,8 +737,7 @@ public class ControlPanel extends LivePanel implements IBusListener {
 
             logger.info("Successfully updated all dials for player: " + player.getName());
         } catch (Exception e) {
-            logger.error("Error updating dials: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error updating dials", e);
 
             // Make sure listeners are re-enabled even if there's an error
             listenersEnabled = true;

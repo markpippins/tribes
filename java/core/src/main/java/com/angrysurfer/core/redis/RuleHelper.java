@@ -95,7 +95,7 @@ public class RuleHelper {
     // return success;
     // } catch (Exception e) {
     // logger.error("Error deleting rule: " + e.getMessage());
-    // e.printStackTrace();
+    // // logger.debug("{}", e, e);
     // return false;
     // }
     // }

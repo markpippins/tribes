@@ -3,11 +3,16 @@ package com.angrysurfer.beats.panel;
 import com.angrysurfer.beats.util.UIHelper;
 import com.angrysurfer.core.api.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 
 public class LaunchPanel extends JPanel implements IBusListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(LaunchPanel.class);
 
     private static final int[] LAUNCH_PAD_LABELS = {
             13, 14, 15, 16, // inputs 1-4 map to 13,14,15,16
@@ -41,7 +46,7 @@ public class LaunchPanel extends JPanel implements IBusListener {
                 repaint();
 
                 // Add debug message
-                System.out.println("LaunchPanel: Grid panel recreated after theme change");
+                logger.debug("LaunchPanel: Grid panel recreated after theme change");
             });
         }
     }

@@ -1,24 +1,46 @@
 package com.angrysurfer.core.sequencer;
 
-import com.angrysurfer.core.api.*;
-import com.angrysurfer.core.event.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.ShortMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.TimingBus;
+import com.angrysurfer.core.event.MelodicScaleSelectionEvent;
+import com.angrysurfer.core.event.MelodicSequencerEvent;
+import com.angrysurfer.core.event.NoteEvent;
+import com.angrysurfer.core.event.PatternSwitchEvent;
+import com.angrysurfer.core.event.StepUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Note;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.*;
+import com.angrysurfer.core.service.DeviceManager;
+import com.angrysurfer.core.service.MelodicSequencerManager;
+import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SessionManager;
+import com.angrysurfer.core.service.UserConfigManager;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.ShortMessage;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -56,7 +78,20 @@ public class MelodicSequencer implements IBusListener {
     private Consumer<NoteEvent> noteEventListener;
 
     public MelodicSequencer(Integer id) {
+        // lightweight constructor: just set the id. Side-effectful initialization
+        // (registering on buses, creating players, touching other managers)
+        // is moved to initialize() so startup ordering can be controlled by App.
         setId(id);
+    }
+
+    /**
+     * Perform side-effectful initialization that requires other managers/singletons
+     * to be available. This should be called by the central startup sequence
+     * (for example from App) once SessionManager, PlayerManager, etc. have
+     * been initialized.
+     */
+    public synchronized void initialize() {
+        // Initialize the player and related resources.
         initializePlayer(SequencerConstants.MELODIC_CHANNELS[id]);
 
         // Initialize with default or first available sequence
@@ -372,7 +407,7 @@ public class MelodicSequencer implements IBusListener {
         Optional<Note> opt = UserConfigManager.getInstance().getCurrentConfig().getDefaultNotes()
                 .stream().filter(p -> p.getChannel().equals(playerChannel)).findFirst();
 
-        if (opt.isPresent()) {
+    if (opt.isPresent()) {
 
             player = opt.get();
             logger.info("Using existing player {} for sequencer {}", player.getId(), id);
@@ -382,15 +417,14 @@ public class MelodicSequencer implements IBusListener {
 
         } else {
             logger.info("Creating new player for melodic sequencer {}", id);
-            // player = RedisService.getInstance().newNote();
             player = new Note();
+            player.initialize("Melo " + getId(), SessionManager.getInstance().getActiveSession(), null, null);
             player.setId(RedisService.getInstance().getPlayerHelper().getNextPlayerId());
             player.setRules(new HashSet<>()); // Ensure rules are initialized
             player.setMinVelocity(60);
             player.setMaxVelocity(127);
             player.setLevel(100);
             player.setIsDefault(true);
-            player.setName("Melo " + getId() + 1);
             player.setDefaultChannel(playerChannel);
         }
 

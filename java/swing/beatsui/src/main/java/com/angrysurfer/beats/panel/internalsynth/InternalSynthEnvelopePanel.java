@@ -18,6 +18,8 @@ import javax.swing.border.TitledBorder;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Panel for controlling ADSR envelope parameters of a synthesizer
@@ -26,6 +28,7 @@ import lombok.Setter;
 @Setter
 
 public class InternalSynthEnvelopePanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(InternalSynthEnvelopePanel.class);
     
     // Envelope control constants
     public static final int CC_ATTACK = 73;
@@ -159,8 +162,7 @@ public class InternalSynthEnvelopePanel extends JPanel {
                     midiCh.controlChange(ccNumber, value);
                 }
             } catch (Exception e) {
-                System.err.println("Error setting CC " + ccNumber + " on channel " + (midiChannel + 1) +
-                        ": " + e.getMessage());
+                logger.error("Error setting CC {} on channel {}: {}", ccNumber, (midiChannel + 1), e.getMessage(), e);
             }
         }
     }

@@ -1,19 +1,32 @@
 package com.angrysurfer.core.service;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.sound.midi.Instrument;
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Soundbank;
+import javax.sound.midi.Synthesizer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.midi.MidiControlMessageEnum;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.preset.DrumItem;
 import com.angrysurfer.core.model.preset.SynthData;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.*;
-import java.io.File;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Manager for internal synthesizer instruments and presets. This singleton
@@ -40,10 +53,23 @@ public class InternalSynthManager {
      * Initialize the manager and register command listeners
      */
     private InternalSynthManager() {
+        // Keep constructor lightweight. Heavy initialization is performed
+        // explicitly via the public initialize() method to avoid side-effects
+        // during class loading or when callers only need the instance object.
+    }
+
+    /**
+     * Perform full manager initialization. This method moves the work that
+     * previously ran in the constructor so callers can control startup order
+     * and avoid circular initialization between managers.
+     */
+    public synchronized void initialize() {
         try {
+            initializeSynthesizer();
             initializeSynthData();
+            // Delegate loading soundbanks to the SoundbankManager which
+            // will use the synthesizer instance.
             loadDefaultSoundbank();
-            initializeSynthesizer(); // Add synthesizer initialization
         } catch (Exception e) {
             logger.error("Error initializing InternalSynthManager", e);
         }

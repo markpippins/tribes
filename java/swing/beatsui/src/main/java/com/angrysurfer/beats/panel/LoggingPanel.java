@@ -376,7 +376,7 @@ public class LoggingPanel extends JPanel {
                 logTextPane.setCaretPosition(document.getLength());
             }
         } catch (BadLocationException e) {
-            e.printStackTrace();
+            logger.error("Error appending log entry to document", e);
         }
     }
 
@@ -403,7 +403,7 @@ public class LoggingPanel extends JPanel {
             document.remove(0, document.getLength());
             logger.info("Log cleared");
         } catch (BadLocationException e) {
-            e.printStackTrace();
+            logger.error("Error clearing log document", e);
         }
     }
 

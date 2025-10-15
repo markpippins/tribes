@@ -223,7 +223,8 @@ public class SessionControlPanel extends JPanel {
                 }
                 CommandBus.getInstance().publish(Commands.SESSION_UPDATED, this, currentSession);
             } catch (Exception ex) {
-                ex.printStackTrace();
+                // Log and continue
+                org.slf4j.LoggerFactory.getLogger(SessionControlPanel.class).error("Error updating session value {}: {}", field, ex.getMessage(), ex);
             }
         }
     }

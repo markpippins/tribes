@@ -16,7 +16,6 @@ public class Note extends Player {
      * Default constructor for JPA
      */
     public Note() {
-        // initialize(); // Call initialize to set up basic properties
         setMelodicPlayer(true);
         setFollowSessionOffset(false);
     }

@@ -25,13 +25,13 @@ import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.angrysurfer.core.service.SoundbankManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.angrysurfer.beats.widget.Dial;
 import com.angrysurfer.beats.util.UIHelper;
+import com.angrysurfer.beats.widget.Dial;
 import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.SoundbankManager;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -555,7 +555,7 @@ public class InternalSynthControlPanel extends JPanel {
      * Reset UI controls to default values after preset change
      */
     private void resetControlsToDefault() {
-        System.out.println("Resetting UI controls to default values...");
+        logger.info("Resetting UI controls to default values");
 
         // Reset all oscillator panels
         for (InternalSynthOscillatorPanel panel : oscillatorPanels) {
@@ -593,7 +593,7 @@ public class InternalSynthControlPanel extends JPanel {
 
             int defaultValue = (slider.getMaximum() - slider.getMinimum()) / 2 + slider.getMinimum();
             slider.setValue(defaultValue);
-            System.out.println("Reset slider to " + defaultValue);
+                logger.debug("Reset slider to {}", defaultValue);
         });
 
         // Reset all dials to appropriate values (using the utility method)
@@ -616,7 +616,7 @@ public class InternalSynthControlPanel extends JPanel {
                 } else if (name.contains("master")) {
                     value = 100; // Master volume full
                 }
-                System.out.println("Reset " + name + " to " + value);
+                    logger.debug("Reset {} to {}", name, value);
             }
 
             dial.setValue(value);
@@ -640,7 +640,7 @@ public class InternalSynthControlPanel extends JPanel {
             // Set master volume
             setControlChange(midiChannel, 7, 100);
         } catch (Exception e) {
-            System.err.println("Error resetting controllers: " + e.getMessage());
+                logger.error("Error resetting controllers", e);
         }
     }
 

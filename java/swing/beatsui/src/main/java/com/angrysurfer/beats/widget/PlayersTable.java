@@ -241,13 +241,13 @@ public class PlayersTable extends JTable {
                 switch (action.getCommand()) {
                     case Commands.PLAYER_ADDED:
                         if (action.getData() instanceof Player player) {
-                            System.out.println("PlayersTable received PLAYER_ADDED: " + player.getName());
+                            logger.info("PlayersTable received PLAYER_ADDED: {}", player.getName());
 
                             SwingUtilities.invokeLater(() -> {
                                 // Only add if not already in table
                                 if (findPlayerRowIndex(player) == -1) {
                                     getPlayersTableModel().addPlayerRow(player);
-                                    System.out.println("Added player to table model: " + player.getName());
+                                    logger.info("Added player to table model: {}", player.getName());
                                     repaint();
                                 }
                             });
@@ -256,13 +256,12 @@ public class PlayersTable extends JTable {
 
                     case Commands.PLAYER_DELETED:
                         if (action.getData() instanceof Player player) {
-                            System.out.println("PlayersTable received PLAYER_DELETED: " + player.getName());
+                            logger.info("PlayersTable received PLAYER_DELETED: {}", player.getName());
 
                             SwingUtilities.invokeLater(() -> {
                                 int rowIndex = findPlayerRowIndex(player);
                                 if (rowIndex >= 0) {
-                                    System.out.println(
-                                            "Removing player from table row " + rowIndex + ": " + player.getName());
+                                    logger.info("Removing player from table row {}: {}", rowIndex, player.getName());
                                     getPlayersTableModel().removeRow(convertRowIndexToModel(rowIndex));
                                     repaint();
                                 }
@@ -389,8 +388,7 @@ public class PlayersTable extends JTable {
                 // CommandBus.getInstance().publish(Commands.PLAYER_UNSELECTED, this, null);
             }
         } catch (Exception ex) {
-            logger.error("Error in player selection: " + ex.getMessage());
-            ex.printStackTrace();
+            logger.error("Error in player selection", ex);
         }
     }
 
@@ -418,7 +416,7 @@ public class PlayersTable extends JTable {
                         .orElse(null);
             }
         } catch (Exception e) {
-            logger.error("Error getting player at row: " + e.getMessage());
+            logger.error("Error getting player at row", e);
         }
 
         return null;
@@ -530,8 +528,7 @@ public class PlayersTable extends JTable {
 
             logger.info("Updated row " + rowIndex + " for player: " + player.getName());
         } catch (Exception e) {
-            logger.error("Error updating player row: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error updating player row", e);
         }
     }
 

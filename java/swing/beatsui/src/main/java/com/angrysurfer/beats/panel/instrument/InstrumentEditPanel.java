@@ -27,8 +27,12 @@ import com.angrysurfer.core.service.InstrumentManager;
 
 import lombok.Getter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Getter
 public class InstrumentEditPanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(InstrumentEditPanel.class);
     private final InstrumentWrapper instrument;
     private final JTextField nameField;
     private final JComboBox<String> deviceCombo;
@@ -115,7 +119,7 @@ public class InstrumentEditPanel extends JPanel {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error populating device combo", e);
         }
     }
 

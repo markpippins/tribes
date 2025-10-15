@@ -1,12 +1,37 @@
 package com.angrysurfer.beats;
 
-import com.angrysurfer.beats.panel.EuclideanPatternPanel;
-import com.angrysurfer.beats.panel.instrument.CustomControlsPanel;
-import com.angrysurfer.beats.panel.player.PlayerEditPanel;
-import com.angrysurfer.beats.panel.player.PlayerInstrumentPanel;
-import com.angrysurfer.beats.panel.player.RuleEditPanel;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.panel.sequencer.poly.DrumPresetPanel;
-import com.angrysurfer.core.api.*;
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
 import com.angrysurfer.core.config.UserConfig;
 import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
@@ -20,15 +45,11 @@ import com.angrysurfer.core.service.InstrumentManager;
 import com.angrysurfer.core.service.PlayerManager;
 import com.angrysurfer.core.service.SessionManager;
 import com.angrysurfer.core.util.UserConfigConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.*;
-import java.io.File;
-import java.util.List;
-import java.util.Objects;
+import com.angrysurfer.beats.panel.player.PlayerEditPanel;
+import com.angrysurfer.beats.panel.player.RuleEditPanel;
+import com.angrysurfer.beats.panel.player.PlayerInstrumentPanel;
+import com.angrysurfer.beats.panel.instrument.CustomControlsPanel;
+import com.angrysurfer.beats.panel.EuclideanPatternPanel;
 
 public class DialogManager implements IBusListener {
 
@@ -130,8 +151,7 @@ public class DialogManager implements IBusListener {
                     }
                 }
             } catch (Exception e) {
-                logger.error("Error in handleAddPlayer: {}", e.getMessage());
-                e.printStackTrace();
+                logger.error("Error in handleAddPlayer: {}", e.getMessage(), e);
             }
         });
     }
@@ -180,8 +200,7 @@ public class DialogManager implements IBusListener {
                 logger.error("No instruments available. New player will have no instrument.");
             }
         } catch (Exception e) {
-            logger.error("Error setting new player instrument: {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("Error setting new player instrument", e);
         }
     }
 
