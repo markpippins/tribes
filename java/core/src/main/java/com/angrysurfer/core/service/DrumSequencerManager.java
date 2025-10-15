@@ -1,5 +1,16 @@
 package com.angrysurfer.core.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.Receiver;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.Constants;
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
@@ -13,15 +24,6 @@ import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.DrumSequenceData;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.Receiver;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Manager for DrumSequencer instances.
@@ -224,6 +226,11 @@ public class DrumSequencerManager implements IBusListener {
     public synchronized DrumSequencer newSequencer() {
         DrumSequencer sequencer = new DrumSequencer();
         sequencer.setId(sequencers.size());
+        try {
+            sequencer.initialize();
+        } catch (Exception e) {
+            logger.error("Error initializing drum sequencer {}: {}", sequencer.getId(), e.getMessage(), e);
+        }
         sequencers.add(sequencer);
         logger.info("Created new drum sequencer (index: {})", sequencers.size() - 1);
         return sequencer;
@@ -238,6 +245,11 @@ public class DrumSequencerManager implements IBusListener {
     public synchronized DrumSequencer newSequencer(Consumer<NoteEvent> noteEventListener) {
         DrumSequencer sequencer = new DrumSequencer();
         sequencer.setNoteEventListener(noteEventListener);
+        try {
+            sequencer.initialize();
+        } catch (Exception e) {
+            logger.error("Error initializing drum sequencer {}: {}", sequencer.getId(), e.getMessage(), e);
+        }
         sequencers.add(sequencer);
         logger.info("Created new drum sequencer with note event listener (index: {})",
                 sequencers.size() - 1);
@@ -257,6 +269,11 @@ public class DrumSequencerManager implements IBusListener {
         DrumSequencer sequencer = new DrumSequencer();
         sequencer.setNoteEventListener(noteEventListener);
         sequencer.setStepUpdateListener(stepUpdateListener);
+        try {
+            sequencer.initialize();
+        } catch (Exception e) {
+            logger.error("Error initializing drum sequencer {}: {}", sequencer.getId(), e.getMessage(), e);
+        }
         sequencers.add(sequencer);
         logger.info("Created new drum sequencer with note event and step update listeners (index: {})",
                 sequencers.size() - 1);

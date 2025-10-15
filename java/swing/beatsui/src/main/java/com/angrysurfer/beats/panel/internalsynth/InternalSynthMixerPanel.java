@@ -2,8 +2,8 @@ package com.angrysurfer.beats.panel.internalsynth;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FlowLayout;
+import java.awt.Font;
 
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.Synthesizer;
@@ -13,6 +13,9 @@ import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.angrysurfer.beats.util.UIHelper;
 import com.angrysurfer.beats.widget.Dial;
@@ -27,6 +30,7 @@ import lombok.Setter;
 @Setter
 
 public class InternalSynthMixerPanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(InternalSynthMixerPanel.class);
     
     // Mixer control constants
     public static final int CC_BALANCE_1_2 = 8;
@@ -143,8 +147,7 @@ public class InternalSynthMixerPanel extends JPanel {
                     midiCh.controlChange(ccNumber, value);
                 }
             } catch (Exception e) {
-                System.err.println("Error setting CC " + ccNumber + " on channel " + (midiChannel + 1) +
-                        ": " + e.getMessage());
+                logger.error("Error setting CC {} on channel {}: {}", ccNumber, (midiChannel + 1), e.getMessage(), e);
             }
         }
     }

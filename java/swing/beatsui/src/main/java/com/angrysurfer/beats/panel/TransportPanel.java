@@ -1,13 +1,30 @@
 package com.angrysurfer.beats.panel;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Insets;
+import java.util.Objects;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.service.SessionManager;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.Objects;
 
 /**
  * Panel containing transport controls (play, stop, record, etc.)
@@ -34,6 +51,7 @@ public class TransportPanel extends JPanel {
     // Tracking variables for session navigation
     private String lastCommand = "";
     private long lastSessionNavTime = 0;
+    private static final Logger logger = LoggerFactory.getLogger(TransportPanel.class);
 
     public TransportPanel() {
         // Change to BorderLayout to better control vertical alignment
@@ -177,8 +195,7 @@ public class TransportPanel extends JPanel {
                 }
             } catch (Exception ex) {
                 // Log and show any errors during save
-                System.err.println("Error saving session: " + ex.getMessage());
-                ex.printStackTrace();
+                logger.error("Error saving session: {}", ex.getMessage(), ex);
                 // CommandBus.getInstance().publish(Commands.SHOW_ERROR, this, "Error saving session: " +
                 // ex.getMessage());
             }

@@ -18,6 +18,8 @@ import javax.swing.border.TitledBorder;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Panel for controlling LFO (Low Frequency Oscillator) parameters of a synthesizer
@@ -25,6 +27,7 @@ import lombok.Setter;
 @Getter
 @Setter
  public class InternalSynthLFOPanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(InternalSynthLFOPanel.class);
     
     // LFO control constants
     public static final int CC_LFO_WAVEFORM = 12;
@@ -32,7 +35,7 @@ import lombok.Setter;
     public static final int CC_LFO_RATE = 76;
     public static final int CC_LFO_AMOUNT = 77;
     
-    private final Synthesizer synthesizer;
+    private final transient Synthesizer synthesizer;
     private Integer midiChannel;
     
     // UI components
@@ -168,8 +171,7 @@ import lombok.Setter;
                     midiCh.controlChange(ccNumber, value);
                 }
             } catch (Exception e) {
-                System.err.println("Error setting CC " + ccNumber + " on channel " + (midiChannel + 1) +
-                        ": " + e.getMessage());
+                logger.error("Error setting CC {} on channel {}: {}", ccNumber, (midiChannel + 1), e.getMessage(), e);
             }
         }
     }
@@ -214,7 +216,7 @@ import lombok.Setter;
         slider.setSnapToTicks(false);
 
         // Create tick labels - just show a few key values
-        Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+    Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
         labelTable.put(0, new JLabel("0"));
         labelTable.put(32, new JLabel("32"));
         labelTable.put(64, new JLabel("64"));
@@ -252,8 +254,8 @@ import lombok.Setter;
         slider.setPaintLabels(true);
         slider.setSnapToTicks(true);
 
-        // Create tick labels
-        Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+    // Create tick labels
+    Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
         for (int i = min; i <= max; i++) {
             JLabel label = new JLabel(labels[i]);
             label.setFont(new Font("Dialog", Font.PLAIN, 9));

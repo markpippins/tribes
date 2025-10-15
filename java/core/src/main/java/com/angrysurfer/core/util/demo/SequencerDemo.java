@@ -196,7 +196,7 @@ package com.angrysurfer.core.util.demo;
 //             outputDevice.close();
 
 //         } catch (InvalidMidiDataException | MidiUnavailableException | InterruptedException e) {
-//             e.printStackTrace();
+//             logger.error("Sequencer demo failed", e);
 //         }
 //     }
 // }

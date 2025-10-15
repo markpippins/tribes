@@ -1,5 +1,11 @@
 package com.angrysurfer.beats.diagnostic.suite;
 
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.Receiver;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.diagnostic.DiagnosticLogBuilder;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
@@ -7,13 +13,12 @@ import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.service.DrumSequencerManager;
 
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.Receiver;
-
 /**
  * Helper class for DrumSequencer diagnostics
  */
 public class DrumSequencerDiagnostics {
+
+    private static final Logger logger = LoggerFactory.getLogger(DrumSequencerDiagnostics.class);
 
     /**
      * Runs comprehensive diagnostics on the DrumSequencer
@@ -284,7 +289,7 @@ public class DrumSequencerDiagnostics {
         try {
             return DrumSequencerManager.getInstance().getActiveSequencer();
         } catch (Exception e) {
-            System.out.println("Error getting active sequencer: " + e.getMessage());
+            logger.error("Error getting active sequencer: {}", e.getMessage(), e);
             return null;
         }
     }

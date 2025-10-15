@@ -1,26 +1,44 @@
 package com.angrysurfer.core.sequencer;
 
-import com.angrysurfer.core.api.*;
-import com.angrysurfer.core.api.midi.MIDIConstants;
-import com.angrysurfer.core.event.*;
-import com.angrysurfer.core.model.InstrumentWrapper;
-import com.angrysurfer.core.model.Player;
-import com.angrysurfer.core.model.Session;
-import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.Receiver;
-import javax.sound.midi.ShortMessage;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.ShortMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.TimingBus;
+import com.angrysurfer.core.api.midi.MIDIConstants;
+import com.angrysurfer.core.event.DrumPadSelectionEvent;
+import com.angrysurfer.core.event.DrumStepParametersEvent;
+import com.angrysurfer.core.event.DrumStepUpdateEvent;
+import com.angrysurfer.core.event.NoteEvent;
+import com.angrysurfer.core.event.PatternSwitchEvent;
+import com.angrysurfer.core.model.InstrumentWrapper;
+import com.angrysurfer.core.model.Player;
+import com.angrysurfer.core.model.Session;
+import com.angrysurfer.core.redis.RedisService;
+import com.angrysurfer.core.service.DeviceManager;
+import com.angrysurfer.core.service.DrumSequencerManager;
+import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.ReceiverManager;
+import com.angrysurfer.core.service.SessionManager;
+import com.angrysurfer.core.service.UserConfigManager;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Core sequencer engine that handles drum pattern sequencing and playback with
@@ -56,11 +74,21 @@ public class DrumSequencer implements IBusListener {
      * Creates a new drum sequencer with per-drum parameters
      */
     public DrumSequencer() {
-
+        // Lightweight constructor: allocate arrays and data structures only.
+        // Side-effectful initialization (synth/device access, bus registration,
+        // loading sequences) is performed in initialize() to allow deterministic
+        // startup ordering.
         players = new Player[SequencerConstants.DRUM_PAD_COUNT];
-        // Initialize the data container
         this.sequenceData = new DrumSequenceData();
+    }
 
+    /**
+     * Perform side-effectful initialization that requires other managers/singletons
+     * to be available. This should be invoked by the central startup routine
+     * (for example App) once SessionManager, DeviceManager, PlayerManager, and
+     * InternalSynthManager have been initialized.
+     */
+    public synchronized void initialize() {
         // Make sure we have a working synthesizer
         if (!InternalSynthManager.getInstance().checkInternalSynthAvailable()) {
             logger.info("Initializing internal synthesizer for drum sequencer");
@@ -68,10 +96,10 @@ public class DrumSequencer implements IBusListener {
             usingInternalSynth = true;
         }
 
-        // Initialize players array
+        // Initialize players array (touches SessionManager, DeviceManager, PlayerManager)
         initializePlayers();
 
-        // Register with command bus
+        // Register with command and timing buses
         CommandBus.getInstance().register(this, new String[]{
                 Commands.REPAIR_MIDI_CONNECTIONS,
                 Commands.TIMING_UPDATE,

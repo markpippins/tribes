@@ -1,5 +1,15 @@
 package com.angrysurfer.core.redis;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.JOptionPane;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.model.Player;
@@ -7,18 +17,11 @@ import com.angrysurfer.core.model.Session;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-
-import javax.swing.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -189,6 +192,7 @@ public class SessionHelper {
         try (Jedis jedis = jedisPool.getResource()) {
             logger.info("Creating new session");
             Session session = new Session();
+            session.initialize();
             session.setId(jedis.incr("seq:session"));
 
             // Set default values
@@ -352,7 +356,7 @@ public class SessionHelper {
                     }
                 } catch (Exception e) {
                     // Skip malformed sessions
-                    System.err.println("Error loading session: " + e.getMessage());
+                    logger.error("Error loading session", e);
                 }
             }
         }

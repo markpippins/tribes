@@ -1,55 +1,31 @@
 package com.angrysurfer.core.api;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.TimingUpdate;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class TimingBus extends AbstractBus {
     private static final String[] EMPTY = new String[]{};
     private static TimingBus instance;
+    private static final Logger LOG = LoggerFactory.getLogger(TimingBus.class);
     // Initialize field BEFORE constructor is called
     private final ConcurrentLinkedQueue<IBusListener> timingListeners = new ConcurrentLinkedQueue<>();
-    private final ExecutorService timingExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "TimingBus-Thread");
-        t.setPriority(Thread.MAX_PRIORITY);
-        return t;
-    });
-    // Add this field for reusing the same Command object
-    private final Command sharedCommand = new Command(null, null, null);
-    private final boolean diagnostic = false;
-    // Diagnostic counter for timing events
-    private int eventCount = 0;
+    // removed unused shared command and diagnostic fields
 
     // Constructor must be after field initialization
     private TimingBus() {
         // We'll handle registration ourselves instead of relying on parent
         // Don't call super() which calls register() before fields are initialized
 
-        // Add diagnostic message
-        System.out.println("TimingBus initialized with " + timingListeners.size() + " listeners");
+        // Log initialization at debug level
+        logger.debug("TimingBus initialized with {} listeners", timingListeners.size());
 
-        // Start a diagnostic thread to monitor timing events
-        if (diagnostic)
-            new Thread(() -> {
-                long lastReport = System.currentTimeMillis();
-                int eventCount = 0;
-
-                while (true) {
-                    try {
-                        Thread.sleep(5000); // Check every 5 seconds
-                        long now = System.currentTimeMillis();
-                        System.out.println("TimingBus health: " + eventCount + " events in " +
-                                ((now - lastReport) / 1000) + " seconds");
-                        lastReport = now;
-                        eventCount = 0;
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                }
-            }, "TimingBus-Monitor").start();
+        // Diagnostic thread removed; use logging if needed
     }
 
     public static TimingBus getInstance() {
@@ -61,29 +37,24 @@ public class TimingBus extends AbstractBus {
 
     @Override
     public void publish(String commandName, Object source, Object data) {
-        // Add immediate diagnostic output
-        // System.out.println("TimingBus: Publishing " + commandName + ", listeners: " + timingListeners.size());
+    // Add immediate diagnostic output
+    // logger.debug("TimingBus: Publishing {} listeners: {}", commandName, timingListeners.size());
 
         if (Commands.TIMING_UPDATE.equals(commandName)) {
             // DON'T reuse the shared command for timing - create a new one for thread
             // safety
             Command cmd = new Command(commandName, source, data);
 
-            // Fast path for timing updates
+            // Fast path for timing updates - call listeners directly
             for (IBusListener listener : timingListeners) {
-                if (listener != source) // Avoid sending to self
+                if (listener != source) { // Avoid sending to self
                     try {
-                        // Simple direct call to onAction
                         listener.onAction(cmd);
                     } catch (Exception e) {
-                        // Log exceptions but continue with other listeners
-                        System.err.println("Error in timing listener: " + e.getMessage());
-                        e.printStackTrace();
+                        LOG.error("Error in timing listener: {}", e.getMessage(), e);
                     }
+                }
             }
-
-            // Increment diagnostic counter
-            eventCount++;
             // return;
         }
 
@@ -96,12 +67,7 @@ public class TimingBus extends AbstractBus {
         return timingListeners.contains(listener);
     }
 
-    // Add method to update shared command without creating new objects
-    private void updateSharedCommand(String commandName, Object source, Object data) {
-        sharedCommand.setCommand(commandName);
-        sharedCommand.setSender(source);
-        sharedCommand.setData(data);
-    }
+    // previously had an updateSharedCommand helper; removed as unused
 
     // Add a specialized method for highest performance timing events
     public void publishTimingUpdate(TimingUpdate update) {
@@ -127,13 +93,13 @@ public class TimingBus extends AbstractBus {
     public void register(IBusListener listener, String[] commands) {
         if (listener != null) {
             if (timingListeners == null) {
-                System.err.println("TimingBus: timingListeners is null!");
+                LOG.error("TimingBus: timingListeners is null!");
                 return;
             }
 
             if (!timingListeners.contains(listener)) {
                 timingListeners.add(listener);
-                System.out.println("TimingBus: Registered listener: " + (listener.getClass() != null ? listener.getClass().getSimpleName() + ": " + listener : "null"));
+                LOG.debug("TimingBus: Registered listener: {}", listener.getClass() != null ? listener.getClass().getSimpleName() + ": " + listener : "null");
             }
         }
     }
@@ -142,9 +108,8 @@ public class TimingBus extends AbstractBus {
     public void unregister(IBusListener listener) {
         if (listener != null && timingListeners != null) {
             timingListeners.remove(listener);
-            // System.out.println("TimingBus: Unregistered listener: " +
-            // (listener.getClass() != null ? listener.getClass().getSimpleName() :
-            // "null"));
+            // logger.debug("TimingBus: Unregistered listener: {}",
+            //         (listener.getClass() != null ? listener.getClass().getSimpleName() : "null"));
         }
     }
 }

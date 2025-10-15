@@ -1,15 +1,36 @@
 package com.angrysurfer.beats.panel.modulation;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Panel containing multiple XY control pads
  */
 public class QuadXYPadPanel extends JPanel {
+
+    private static final Logger logger = LoggerFactory.getLogger(QuadXYPadPanel.class);
     private static final int PAD_COUNT = 4; // Number of XY pads
     private static final int PAD_SIZE = 150; // Size of each pad in pixels
     private static final int PAD_MARGIN = 20; // Margin between pads
@@ -314,7 +335,7 @@ public class QuadXYPadPanel extends JPanel {
             
             // Add listener for demonstration
             xyPadPanel.addXYPadListener((padIndex, x, y) -> {
-                System.out.printf("Pad %d position: %.2f, %.2f%n", padIndex, x, y);
+                logger.info("Pad {} position: {:.2f}, {:.2f}", padIndex, x, y);
             });
             
             JPanel infoPanel = new JPanel();

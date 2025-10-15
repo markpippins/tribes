@@ -16,6 +16,9 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +28,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class InternalSynthFilterPanel extends JPanel {
+
+    private static final Logger logger = LoggerFactory.getLogger(InternalSynthFilterPanel.class);
 
     // Filter control constants
     public static final int CC_FILTER_TYPE = 102;
@@ -105,7 +110,7 @@ public class InternalSynthFilterPanel extends JPanel {
             if (!filterTypeSlider.getValueIsAdjusting()) {
                 int filterType = filterTypeSlider.getValue();
                 setControlChange(CC_FILTER_TYPE, filterType * 32); // Scale to 0-127 range
-                System.out.println("Filter type: " + filterType + " (CC" + CC_FILTER_TYPE + "=" + (filterType * 32) + ")");
+                logger.debug("Filter type: {} (CC{}={})", filterType, CC_FILTER_TYPE, filterType * 32);
             }
         });
 
@@ -165,8 +170,7 @@ public class InternalSynthFilterPanel extends JPanel {
                     midiCh.controlChange(ccNumber, value);
                 }
             } catch (Exception e) {
-                System.err.println("Error setting CC " + ccNumber + " on channel " + (midiChannel + 1) +
-                        ": " + e.getMessage());
+                logger.error("Error setting CC {} on channel {}", ccNumber, midiChannel + 1, e);
             }
         }
     }

@@ -1,5 +1,14 @@
 package com.angrysurfer.beats;
 
+import java.util.List;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.util.UIErrorHandler;
 import com.angrysurfer.core.Constants;
 import com.angrysurfer.core.api.Command;
@@ -10,13 +19,14 @@ import com.angrysurfer.core.config.FrameState;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.redis.InstrumentHelper;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.*;
+import com.angrysurfer.core.service.DeviceManager;
+import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SessionManager;
+import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.UserConfigManager;
 import com.formdev.flatlaf.FlatLightLaf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.util.List;
 
 public class App implements IBusListener {
 
@@ -140,29 +150,26 @@ public class App implements IBusListener {
             logger.info("Redis service initialized");
             splash.completeTask("Connected to database");
 
-            // Initialize MIDI device manager
-            DeviceManager deviceManager = DeviceManager.getInstance();
-            deviceManager.refreshDeviceList();
+            // Initialize MIDI device manager explicitly
+            DeviceManager.getInstance().initialize();
             splash.completeTask("Detected MIDI devices");
 
-            // Initialize SoundbankManager BEFORE InternalSynthManager
+            // Initialize SoundbankManager BEFORE the internal synthesizer initialization
             SoundbankManager.getInstance().initializeSoundbanks();
             SoundbankManager.getInstance().ensureSoundbanksLoaded();
             splash.completeTask("Loaded soundbanks");
 
-            // Initialize synth engine - now using InternalSynthManager
-            InternalSynthManager.getInstance().initializeSynthesizer();
-            SoundbankManager.getInstance().ensureSoundbanksLoaded();
-            // InternalSynthManager.getInstance().loadDefaultSoundbank();
+            // Initialize the internal synthesizer and related synth data
+            // using the explicit initialize() entrypoint to avoid constructor side-effects
+            InternalSynthManager.getInstance().initialize();
             splash.completeTask("Loaded internal synthesizer");
 
-            // Initialize instrument management
+            // Initialize instrument management and the InstrumentManager explicitly
             InstrumentHelper instrumentHelper = redisService.getInstrumentHelper();
             List<InstrumentWrapper> instruments = instrumentHelper.findAllInstruments();
             logger.info("Found {} instruments in Redis", instruments.size());
 
-            // Initialize InstrumentManager (if not already)
-            InstrumentManager.getInstance().refreshInstruments();
+            InstrumentManager.getInstance().initialize();
             splash.completeTask("Loaded instrument configurations");
 
             UserConfigManager.getInstance();
@@ -177,6 +184,8 @@ public class App implements IBusListener {
             splash.completeTask("Initialized session manager");
 
             // Ensure channel consistency in PlayerManager
+            // Initialize PlayerManager explicitly and then ensure channel consistency
+            PlayerManager.getInstance().initialize();
             PlayerManager.getInstance().ensureChannelConsistency();
 
             // Signal system ready - this will trigger waiting sequencers to initialize
@@ -189,9 +198,8 @@ public class App implements IBusListener {
     }
 
     private static void handleInitializationFailure(String errorMessage, Exception e) {
-        logger.error("Critical initialization error: {}", errorMessage);
-        logger.error("Exception: {}", e.getMessage());
-        e.printStackTrace();
+    logger.error("Critical initialization error: {}", errorMessage);
+    logger.error("Exception caught during initialization", e);
 
         SwingUtilities.invokeLater(() -> {
             String fullMessage = String.format("""

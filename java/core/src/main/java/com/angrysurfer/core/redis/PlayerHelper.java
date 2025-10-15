@@ -329,7 +329,9 @@ public class PlayerHelper {
     }
 
     public Player newNote() {
-        Player player = new Note("Note", SessionManager.getInstance().getActiveSession(), null, 60, null);
+        Session session = SessionManager.getInstance().getActiveSession();
+        Player player = new Note();
+        player.initialize("Note", session, null, null);
 
         player.setId(getNextPlayerId());
         player.setRules(new HashSet<>()); // Ensure rules are initialized
@@ -342,7 +344,9 @@ public class PlayerHelper {
     }
 
     public Player newStrike() {
-        Player player = new Strike("Strike", SessionManager.getInstance().getActiveSession(), null, 36, null);
+        Session session = SessionManager.getInstance().getActiveSession();
+        Player player = new Strike();
+        player.initialize("Strike", session, null, null);
 
         player.setId(getNextPlayerId());
         player.setRules(new HashSet<>()); // Ensure rules are initialized

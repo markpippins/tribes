@@ -16,6 +16,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Getter
 @Setter
@@ -83,6 +85,7 @@ public class TransportIndicatorPanel extends JPanel implements IBusListener {
     private Player currentPlayer;
     private Timer performanceMonitorTimer;
     private Random random = new Random(); // For demo level meter movement
+    private static final Logger logger = LoggerFactory.getLogger(TransportIndicatorPanel.class);
 
     public TransportIndicatorPanel() {
         super();
@@ -293,8 +296,7 @@ public class TransportIndicatorPanel extends JPanel implements IBusListener {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error in StatusBar.onAction: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error in TransportIndicatorPanel.onAction: {}", e.getMessage(), e);
         }
     }
 

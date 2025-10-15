@@ -1,5 +1,18 @@
 package com.angrysurfer.core.service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.sound.midi.MidiDevice;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
@@ -11,14 +24,9 @@ import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -35,14 +43,8 @@ public class InstrumentManager implements IBusListener {
 
     // Private constructor for singleton pattern
     private InstrumentManager() {
-        this.instrumentHelper = RedisService.getInstance().getInstrumentHelper();
-        // Register for command events
-        CommandBus.getInstance().register(this, new String[]{
-                Commands.INSTRUMENT_UPDATED, Commands.INSTRUMENTS_REFRESHED, Commands.USER_CONFIG_LOADED
-        });
-
-        // Initial cache load
-        refreshInstruments();
+    this.instrumentHelper = RedisService.getInstance().getInstrumentHelper();
+    // Keep constructor lightweight; heavy work moved to initialize().
     }
 
     // Static method to get the singleton instance
@@ -135,6 +137,20 @@ public class InstrumentManager implements IBusListener {
         logger.info("Refreshing instruments cache");
         initializeCache();
         needsRefresh = false;
+    }
+
+    /**
+     * Explicit initialization entrypoint. Registers the manager for commands
+     * and performs the initial cache load. Call during application startup.
+     */
+    public synchronized void initialize() {
+        // Register for command events
+        CommandBus.getInstance().register(this, new String[]{
+                Commands.INSTRUMENT_UPDATED, Commands.INSTRUMENTS_REFRESHED, Commands.USER_CONFIG_LOADED
+        });
+
+        // Initial cache load
+        refreshInstruments();
     }
 
     /**

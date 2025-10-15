@@ -15,8 +15,11 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 
-import com.angrysurfer.beats.widget.Dial;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.util.UIHelper;
+import com.angrysurfer.beats.widget.Dial;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +31,7 @@ import lombok.Setter;
 @Setter
 
 public class InternalSynthEffectsPanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(InternalSynthEffectsPanel.class);
     
     // Effects control constants
     public static final int CC_EFFECT_TYPE = 91;
@@ -267,8 +271,7 @@ public class InternalSynthEffectsPanel extends JPanel {
                     midiCh.controlChange(ccNumber, value);
                 }
             } catch (Exception e) {
-                System.err.println("Error setting CC " + ccNumber + " on channel " + (midiChannel + 1) +
-                        ": " + e.getMessage());
+                logger.error("Error setting CC {} on channel {}", ccNumber, midiChannel + 1, e);
             }
         }
     }

@@ -1,6 +1,25 @@
 package com.angrysurfer.core.model;
 
-import com.angrysurfer.core.api.*;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.IntStream;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiUnavailableException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.sequencer.Scale;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingUpdate;
@@ -9,18 +28,10 @@ import com.angrysurfer.core.service.InstrumentManager;
 import com.angrysurfer.core.service.PlayerManager;
 import com.angrysurfer.core.util.MidiClockSource;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiUnavailableException;
-import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.IntStream;
 
 @Getter
 @Setter
@@ -127,10 +138,25 @@ public class Session implements Serializable, IBusListener {
         if (timingListeners == null) {
             timingListeners = new ConcurrentLinkedQueue<>();
         }
+        // NOTE: Do not register on buses inside constructor to avoid side-effects during deserialization
+        // Bus registration is deferred to initialize(). This keeps construction side-effect-free for Phase 0.
+    }
 
-        // Register with buses after fields are initialized
-        CommandBus.getInstance().register(this, new String[]{Commands.TIMING_PARAMETERS_CHANGED});
-        timingBus.register(this);
+    /**
+     * Perform side-effectful initialization such as registering with the CommandBus and TimingBus.
+     * Call this after constructing a Session instance to complete setup.
+     */
+    public synchronized void initialize() {
+        if (timingListeners == null) {
+            timingListeners = new ConcurrentLinkedQueue<>();
+        }
+
+        try {
+            CommandBus.getInstance().register(this, new String[]{Commands.TIMING_PARAMETERS_CHANGED});
+            timingBus.register(this);
+        } catch (Exception e) {
+            logger.error("Failed to initialize Session buses: {}", e.getMessage(), e);
+        }
     }
 
     public Session(float tempoInBPM, int bars, int beatsPerBar, int ticksPerBeat, int parts, int partLength) {
@@ -244,7 +270,7 @@ public class Session implements Serializable, IBusListener {
      * Make this a complete reset of all state
      */
     public void reset() {
-        // System.out.println("Session: Resetting session state");
+    if (logger.isDebugEnabled()) logger.debug("Session: Resetting session state");
 
         // Reset all position variables to 1 - consistent starting points
         tick = 1;
@@ -257,40 +283,40 @@ public class Session implements Serializable, IBusListener {
         beatCount = 0;
         barCount = 0;
         partCount = 0;
-        // System.out.println("Session: All counters reset");
+    if (logger.isDebugEnabled()) logger.debug("Session: All counters reset");
         // Reset player state
         if (getPlayers() != null) {
-            // System.out.println("Session: Resetting " + getPlayers().size() + " players");
+            if (logger.isDebugEnabled()) logger.debug("Session: Resetting {} players", getPlayers().size());
             getPlayers().forEach(p -> {
                 if (p.getSkipCycler() != null) {
                     p.getSkipCycler().reset();
                 }
                 p.setEnabled(false);
-                // System.out.println("Session: Reset player " + p.getId());
+                if (logger.isDebugEnabled()) logger.debug("Session: Reset player {}", p.getId());
             });
         }
 
         // Clear lists
         if (addList != null) {
             addList.clear();
-            // System.out.println("Session: Add list cleared");
+            if (logger.isDebugEnabled()) logger.debug("Session: Add list cleared");
         }
         if (removeList != null) {
             removeList.clear();
-            // System.out.println("Session: Remove list cleared");
+            if (logger.isDebugEnabled()) logger.debug("Session: Remove list cleared");
         }
 
         // Reset state flags
         done = false;
         isActive = false;
         paused = false;
-        // System.out.println("Session: State flags reset");
+    if (logger.isDebugEnabled()) logger.debug("Session: State flags reset");
 
         // Clear mute groups
         clearMuteGroups();
-        // System.out.println("Session: Mute groups cleared");
+    if (logger.isDebugEnabled()) logger.debug("Session: Mute groups cleared");
 
-        // System.out.println("Session: Reset complete");
+    if (logger.isDebugEnabled()) logger.debug("Session: Reset complete");
     }
 
     private void clearMuteGroups() {
@@ -341,34 +367,32 @@ public class Session implements Serializable, IBusListener {
 
         // Set up players
         if (getPlayers() != null && !getPlayers().isEmpty()) {
-            // System.out.println("Session: Setting up " + getPlayers().size() + "
-            // players");
+            // logger.debug("Session: Setting up {} players", getPlayers().size());
             getPlayers().forEach(p -> {
-                // System.out.println("Session: Setting up player " + p.getId() + " (" +
-                // p.getName() + ")");
+                // logger.debug("Session: Setting up player {} ({})", p.getId(), p.getName());
                 p.setEnabled(true);
                 if (p.getRules() != null) {
-                    // System.out.println(" - Player has " + p.getRules().size() + " rules");
+                    // logger.debug(" - Player has {} rules", p.getRules().size());
                 }
             });
         } else {
-            System.out.println("Session: No players to set up");
+            logger.info("Session: No players to set up");
         }
 
         // Register with timing bus
         timingBus.register(this);
-        System.out.println("Session: Registered with timing bus");
+        logger.info("Session: Registered with timing bus");
 
         // Notify about tempo to all sequencers
         CommandBus.getInstance().publish(Commands.UPDATE_TEMPO, this, ticksPerBeat);
 
         // Set active state
         isActive = true;
-        System.out.println("Session: Session marked as active");
+        logger.info("Session: Session marked as active");
 
         // Publish session starting event
         CommandBus.getInstance().publish(Commands.SESSION_STARTING, this);
-        System.out.println("Session: Published SESSION_STARTING event");
+        logger.info("Session: Published SESSION_STARTING event");
     }
 
     /**

@@ -28,13 +28,14 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Getter
 @Setter
 public abstract class DrumSequencerPanel extends JPanel implements IBusListener {
 
-    private static final Logger logger = Logger.getLogger(DrumSequencerPanel.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(DrumSequencerPanel.class);
 
     private static DrumStepParametersEvent reusableParamChangeEvent = new DrumStepParametersEvent();
     private final List<TriggerButton> selectorButtons = new ArrayList<>();
@@ -250,7 +251,7 @@ public abstract class DrumSequencerPanel extends JPanel implements IBusListener 
                 drumPadPanel.selectDrumPad(currentSelection);
             }
 
-            System.out.println("DrumParamsSequencerPanel: Recreated drum pad panel after theme change");
+            logger.info("DrumParamsSequencerPanel: Recreated drum pad panel after theme change");
         }
     }
 
@@ -680,7 +681,7 @@ public abstract class DrumSequencerPanel extends JPanel implements IBusListener 
                 sequencer.toggleAccent(selectedPadIndex, stepIndex);
 
             if (wasActive == isNowActive) {
-                System.err.println("WARNING: Toggle step failed for pad " + selectedPadIndex + ", step " + stepIndex);
+                logger.warn("Toggle step failed for pad {}, step {}", selectedPadIndex, stepIndex);
             }
 
             // Update the visual state of the button

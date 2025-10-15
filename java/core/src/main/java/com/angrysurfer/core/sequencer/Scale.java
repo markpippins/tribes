@@ -432,7 +432,7 @@ public class Scale {
                 notes.add(SCALE_NOTES[i]);
             }
         }
-        // System.out.println(notes);
+        if (logger.isDebugEnabled()) logger.debug("{}", notes);
     }
 
     public static void main(String[] args) {
@@ -441,7 +441,7 @@ public class Scale {
         String scaleName = "Major";
 
         Boolean[] scale = getScale(key, scaleName);
-        // System.out.println("Scale for key " + key + " in " + scaleName + ":");
+    if (logger.isDebugEnabled()) logger.debug("Scale for key {} in {}:", key, scaleName);
         printScale(scale);
 
         // Try another scale
@@ -449,7 +449,7 @@ public class Scale {
         scaleName = "Natural Minor";
 
         scale = getScale(key, scaleName);
-        // System.out.println("\nScale for key " + key + " in " + scaleName + ":");
+    if (logger.isDebugEnabled()) logger.debug("\nScale for key {} in {}:", key, scaleName);
         printScale(scale);
     }
 

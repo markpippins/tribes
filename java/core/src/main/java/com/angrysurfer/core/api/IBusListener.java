@@ -80,11 +80,11 @@ public interface IBusListener {
     
 //     // Handler methods
 //     private void handleSystemReady(Command cmd) {
-//         System.out.println("System is ready!");
+//         logger.debug("System is ready!");
 //     }
-    
+//     
 //     private void handlePlayerUpdated(Command cmd) {
-//         System.out.println("Player updated: " + cmd.getData());
+//         logger.debug("Player updated: {}", cmd.getData());
 //     }
     
 //     // IBusListener implementation
@@ -93,7 +93,7 @@ public interface IBusListener {
 //         // Let the interface try to handle it with our registered handlers
 //         if (!tryHandleCommand(action)) {
 //             // Handle any commands not registered with lambdas
-//             System.out.println("Unhandled command: " + action.getCommand());
+//             logger.debug("Unhandled command: {}", action.getCommand());
 //         }
 //     }
 // }

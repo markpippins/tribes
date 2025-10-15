@@ -1,23 +1,32 @@
 package com.angrysurfer.beats.visualization;
 
-import com.angrysurfer.beats.visualization.handler.music.ScrollingSequencerVisualization;
-import com.angrysurfer.core.api.Command;
-import com.angrysurfer.core.api.CommandBus;
-import com.angrysurfer.core.api.Commands;
-import com.angrysurfer.core.api.IBusListener;
-import lombok.Getter;
-import lombok.Setter;
-
-import javax.swing.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.Timer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.beats.visualization.handler.music.ScrollingSequencerVisualization;
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+
+import lombok.Getter;
+import lombok.Setter;
+
 @Getter
 @Setter
 public class Visualizer implements IBusListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(Visualizer.class);
 
     private static final int VISUALIZATION_DELAY = 300; // 30 seconds
     private static final int VISUALIZATION_CHANGE_DELAY = 100; // 10 seconds * 6 = 1 minu
@@ -152,7 +161,7 @@ public class Visualizer implements IBusListener {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             scanPackageForVisualizations(basePackage, classLoader, visualizations);
         } catch (Exception e) {
-            System.err.println("Error scanning for visualizations: " + e.getMessage());
+            logger.error("Error scanning for visualizations", e);
         }
 
         return visualizations;
@@ -165,7 +174,7 @@ public class Visualizer implements IBusListener {
             java.net.URL resource = classLoader.getResource(path);
 
             if (resource == null) {
-                System.err.println("Package not found: " + packageName);
+                logger.warn("Package not found: {}", packageName);
                 return;
             }
 
@@ -191,7 +200,7 @@ public class Visualizer implements IBusListener {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error scanning package " + packageName + ": " + e.getMessage());
+            logger.error("Error scanning package {}", packageName, e);
         }
     }
 
@@ -223,7 +232,7 @@ public class Visualizer implements IBusListener {
                 visualizations.add(handler);
             }
         } catch (Exception e) {
-            System.err.println("Failed to load visualization: " + className + " - " + e.getMessage());
+            logger.error("Failed to load visualization: {}", className, e);
         }
     }
 
@@ -314,7 +323,7 @@ public class Visualizer implements IBusListener {
         try {
             currentVisualization.update(buttons);
         } catch (Exception e) {
-            System.err.println(currentVisualization.getName() + " Error updating display: " + e.getMessage());
+            logger.error("{} Error updating display", currentVisualization != null ? currentVisualization.getName() : "<unknown>", e);
         }
     }
 

@@ -1,27 +1,46 @@
 package com.angrysurfer.core.model;
 
-import com.angrysurfer.core.api.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
+
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.ShortMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.model.feature.Pad;
 import com.angrysurfer.core.sequencer.Scale;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingUpdate;
 import com.angrysurfer.core.util.Cycler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.ShortMessage;
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -176,27 +195,27 @@ public abstract class Player implements Serializable, IBusListener {
     /**
      * Simple initialization for minimal player setup
      */
-    protected void initialize(String name, Session session, InstrumentWrapper instrument,
-                              List<Integer> allowedControlMessages) {
+    public synchronized void initialize(String name, Session session, InstrumentWrapper instrument,
+                                        List<Integer> allowedControlMessages) {
         // Set basic properties
         setName(name);
         setSession(session);
         setInstrument(instrument);
         setAllowedControlMessages(allowedControlMessages);
 
-        // Register with command bus for specific commands only
-        CommandBus.getInstance().register(this, new String[]{
-                Commands.TIMING_UPDATE,      // For timing-based note triggers
-                Commands.TRANSPORT_STOP,     // To disable when transport stops
-                Commands.TRANSPORT_START,    // To re-enable when transport starts
-                Commands.ALL_NOTES_OFF       // Optional - if you want to handle this globally
-        });
+    // Register with command bus for specific commands only
+    CommandBus.getInstance().register(this, new String[]{
+        Commands.TIMING_UPDATE,      // For timing-based note triggers
+        Commands.TRANSPORT_STOP,     // To disable when transport stops
+        Commands.TRANSPORT_START,    // To re-enable when transport starts
+        Commands.ALL_NOTES_OFF       // Optional - if you want to handle this globally
+    });
 
-        // Register with timing bus (assuming this still uses the old registration method)
-        TimingBus.getInstance().register(this);
+    // Register with timing bus
+    TimingBus.getInstance().register(this);
 
-        // Initialize rules collection
-        rules = new HashSet<>();
+    // Initialize rules collection
+    rules = new HashSet<>();
     }
 
     public void setInstrument(InstrumentWrapper instrument) {
@@ -801,7 +820,7 @@ public abstract class Player implements Serializable, IBusListener {
 
         String cmd = action.getCommand();
 
-        // // System.out.println("Player " + getName() + " received command: " + cmd);
+    // // logger.debug("Player {} received command: {}", getName(), cmd);
         if (getSession() != null && getEnabled()) {
             switch (cmd) {
                 case Commands.TIMING_UPDATE -> {
@@ -924,7 +943,7 @@ public abstract class Player implements Serializable, IBusListener {
             initializeTransientFields();
         } catch (Exception e) {
             // Log but continue - we can create a new one each time if needed
-            System.err.println("Error reinitializing MIDI message: " + e.getMessage());
+            logger.error("Error reinitializing MIDI message: {}", e.getMessage(), e);
         }
     }
 

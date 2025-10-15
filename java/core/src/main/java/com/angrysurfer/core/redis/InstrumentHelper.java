@@ -58,9 +58,7 @@ public class InstrumentHelper {
             logger.debug("Retrieved JSON for instrument {}: {}", id, json);
             return objectMapper.readValue(json, InstrumentWrapper.class);
         } catch (Exception e) {
-            logger.error("Error finding instrument with ID {}: {}", id, e.getMessage());
-            // For debugging purposes, print the full stack trace
-            e.printStackTrace();
+            logger.error("Error finding instrument with ID {}", id, e);
             return null;
         }
     }

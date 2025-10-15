@@ -1,26 +1,32 @@
 package com.angrysurfer.core.service;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.api.midi.MidiControlMessageEnum;
-import com.angrysurfer.core.event.*;
+import com.angrysurfer.core.event.PlayerInstrumentChangeEvent;
+import com.angrysurfer.core.event.PlayerPresetChangeEvent;
+import com.angrysurfer.core.event.PlayerRefreshEvent;
+import com.angrysurfer.core.event.PlayerRuleUpdateEvent;
+import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Rule;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.SequencerConstants;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * The central source of truth for all player-related operations.
@@ -36,7 +42,7 @@ public class PlayerManager implements IBusListener {
 
     private PlayerManager() {
         this.redisService = RedisService.getInstance();
-        registerForEvents();
+        // Keep constructor lightweight; call initialize() from App to register events
     }
 
     public static synchronized PlayerManager getInstance() {
@@ -63,6 +69,14 @@ public class PlayerManager implements IBusListener {
         });
 
         logger.info("PlayerManager registered for specific events");
+    }
+
+    /**
+     * Explicit initialization entrypoint for PlayerManager. Registers for
+     * command events. Call during application startup when ordering is known.
+     */
+    public synchronized void initialize() {
+        registerForEvents();
     }
 
     /**

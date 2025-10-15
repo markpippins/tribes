@@ -2,6 +2,8 @@ package com.angrysurfer.beats.diagnostic;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ public class DiagnosticLogBuilder {
     private final List<String> warnings = new ArrayList<>();
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final String title;
+    private static final Logger logger = LoggerFactory.getLogger(DiagnosticLogBuilder.class);
 
     /**
      * Constructor with title
@@ -105,6 +108,9 @@ public class DiagnosticLogBuilder {
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         log.append("Stack trace:\n").append(sw.toString()).append("\n");
+
+        // Also emit to the logger so the exception is visible in configured logs
+        logger.error("Captured exception for diagnostics: {}", e.getMessage(), e);
 
         return this;
     }

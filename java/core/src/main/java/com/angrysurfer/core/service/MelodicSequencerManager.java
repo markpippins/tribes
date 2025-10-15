@@ -1,5 +1,21 @@
 package com.angrysurfer.core.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.Constants;
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
@@ -11,15 +27,12 @@ import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.MelodicSequenceDataHelper;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.sequencer.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.Receiver;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.angrysurfer.core.sequencer.Direction;
+import com.angrysurfer.core.sequencer.MelodicSequenceData;
+import com.angrysurfer.core.sequencer.MelodicSequenceModifier;
+import com.angrysurfer.core.sequencer.MelodicSequencer;
+import com.angrysurfer.core.sequencer.SequencerConstants;
+import com.angrysurfer.core.sequencer.TimingDivision;
 
 /**
  * Manager for MelodicSequencer instances. Maintains a collection of sequencers
@@ -75,6 +88,13 @@ public class MelodicSequencerManager extends DefaultBusListener {
         // Create a new sequencer with the specified ID and channel
         MelodicSequencer sequencer = new MelodicSequencer(id);
         sequencer.setSequenceData(new MelodicSequenceData());
+
+        // Perform side-effectful initialization now that the manager has created the sequencer
+        try {
+            sequencer.initialize();
+        } catch (Exception e) {
+            logger.error("Error initializing melodic sequencer {}: {}", id, e.getMessage(), e);
+        }
 
         // Add to both map and list
         sequencerMap.put(id, sequencer);
@@ -620,15 +640,14 @@ public class MelodicSequencerManager extends DefaultBusListener {
 
         } else {
             logger.info("Creating new player for melodic sequencer {}", sequencer.getId());
-            // player = RedisService.getInstance().newNote();
             player = new Note();
+            player.initialize("Melo " + sequencer.getId(), SessionManager.getInstance().getActiveSession(), null, null);
             player.setId(RedisService.getInstance().getPlayerHelper().getNextPlayerId());
             player.setRules(new HashSet<>()); // Ensure rules are initialized
             player.setMinVelocity(60);
             player.setMaxVelocity(127);
             player.setLevel(100);
             player.setIsDefault(true);
-            player.setName("Melo " + sequencer.getId() + 1);
             player.setDefaultChannel(playerChannel);
         }
 

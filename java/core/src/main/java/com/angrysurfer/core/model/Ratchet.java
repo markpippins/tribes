@@ -1,15 +1,17 @@
 package com.angrysurfer.core.model;
 
+import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.sequencer.TimingUpdate;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 @Getter
 @Setter
@@ -54,24 +56,37 @@ public class Ratchet extends Strike {
         targetTick = getSession().getTickCount() + offset;
         logger.debug("Adding rule - tick: {}, part: {}", targetTick, part);
         addRule(new Rule(Comparison.TICK_COUNT, Operator.EQUALS, targetTick, part));
+        // Note: do not perform side-effects here (adding to session, registering on buses, publishing events)
+        // Those actions are deferred to initialize() so construction remains side-effect-free for Phase 0 startup hardening.
+    }
 
-        synchronized (getSession().getPlayers()) {
-            getSession().getPlayers().add(this);
-            getSession().getRemoveList().add(this);
+    /**
+     * Perform the side-effects that were previously in the constructor: add to session, register on buses,
+     * and publish PLAYER_ADDED. This must be called after construction to complete setup.
+     */
+    public synchronized void initialize() {
+        try {
+            if (getSession() != null) {
+                synchronized (getSession().getPlayers()) {
+                    getSession().getPlayers().add(this);
+                    getSession().getRemoveList().add(this);
 
-            // Explicitly publish that this player was added
+                    // Explicitly publish that this player was added
+                    CommandBus.getInstance().publish(Commands.PLAYER_ADDED, this, this);
+                    logger.info("Published PLAYER_ADDED for Ratchet: {}", getName());
+                }
+            }
+
+            // Register for timing updates
+            CommandBus.getInstance().register(this, new String[]{Commands.TIMING_UPDATE});
+            TimingBus.getInstance().register(this);
+            logger.info("Ratchet initialized and registered: {}", this);
+
+            // Publish again if needed by listeners that expect a post-registration event
             CommandBus.getInstance().publish(Commands.PLAYER_ADDED, this, this);
-            logger.info("Published PLAYER_ADDED for Ratchet: {}", getName());
+        } catch (Exception e) {
+            logger.error("Error initializing Ratchet {}: {}", getName(), e.getMessage(), e);
         }
-
-        CommandBus.getInstance().register(this, new String[]{Commands.TIMING_UPDATE});
-
-        logger.info("New Ratchet created: {}", this);
-        TimingBus.getInstance().register(this);
-        logger.info("New Ratchet registered with TimingBus: {}", this);
-
-        // Publish a command that a new player was added
-        CommandBus.getInstance().publish(Commands.PLAYER_ADDED, this, this);
     }
 
     @Override

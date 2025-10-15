@@ -179,8 +179,7 @@ public class PlayersTableModel extends DefaultTableModel {
 
             fireTableRowsUpdated(modelRow, modelRow);
         } catch (Exception e) {
-            logger.error("Error updating player row: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error updating player row", e);
         }
     }
 

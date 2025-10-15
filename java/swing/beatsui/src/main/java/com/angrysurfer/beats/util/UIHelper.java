@@ -141,7 +141,7 @@ public class UIHelper {
             container.add(component, constraints);
             return true;
         } catch (Exception e) {
-            e.printStackTrace(); // More detailed stack trace for debugging
+            logger.error("Error adding component safely", e);
             return false;
         }
     }
