@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+    <module name="TreeWalker"/>
+
+    <!-- Allow suppressions via external file for intentional cases -->
+    <module name="SuppressionFilter">
+        <property name="file" value="config/checkstyle/suppressions.xml"/>
+    </module>
+
+    <!-- Flag usages of System.out, System.err, and printStackTrace in production code -->
+    <module name="RegexpSingleline">
+        <property name="format" value="System\.out|System\.err|printStackTrace\("/>
+        <property name="message" value="Avoid using System.out/System.err/printStackTrace; use SLF4J instead or capture stack trace into a string for UI diagnostics."/>
+    </module>
+
+</module>

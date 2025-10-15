@@ -654,7 +654,7 @@ public class Session implements Serializable, IBusListener {
     @Override
     public void onAction(Command action) {
         if (action.getCommand() != null) {
-            // // System.out.println("Session received action: " + action.getCommand());
+            // // logger.debug("Session received action: {}", action.getCommand());
             switch (action.getCommand()) {
                 case Commands.TIMING_PARAMETERS_CHANGED -> sequencerManager.updateTimingParameters(getTempoInBPM(),
                         getTicksPerBeat(), getBeatsPerBar());
