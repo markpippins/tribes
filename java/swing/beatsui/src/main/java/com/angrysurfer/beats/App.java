@@ -19,12 +19,10 @@ import com.angrysurfer.core.config.FrameState;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.redis.InstrumentHelper;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.InternalSynthManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
 import com.angrysurfer.core.service.SessionManager;
-import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.SoundbankService;
 import com.angrysurfer.core.service.UserConfigManager;
 import com.formdev.flatlaf.FlatLightLaf;
 
@@ -145,50 +143,27 @@ public class App implements IBusListener {
 
     private static void initializeServices() {
         try {
-            // Initialize RedisService first
             RedisService redisService = RedisService.getInstance();
             logger.info("Redis service initialized");
             splash.completeTask("Connected to database");
 
-            // Initialize MIDI device manager explicitly
-            DeviceManager.getInstance().initialize();
-            splash.completeTask("Detected MIDI devices");
+            MidiService.getInstance().initialize();
+            splash.completeTask("Initialized MIDI system");
 
-            // Initialize SoundbankManager BEFORE the internal synthesizer initialization
-            SoundbankManager.getInstance().initializeSoundbanks();
-            SoundbankManager.getInstance().ensureSoundbanksLoaded();
+            SoundbankService.getInstance().initialize();
             splash.completeTask("Loaded soundbanks");
 
-            // Initialize the internal synthesizer and related synth data
-            // using the explicit initialize() entrypoint to avoid constructor side-effects
-            InternalSynthManager.getInstance().initialize();
-            splash.completeTask("Loaded internal synthesizer");
+            PlaybackService.getInstance().initialize();
+            splash.completeTask("Initialized playback");
 
-            // Initialize instrument management and the InstrumentManager explicitly
-            InstrumentHelper instrumentHelper = redisService.getInstrumentHelper();
-            List<InstrumentWrapper> instruments = instrumentHelper.findAllInstruments();
-            logger.info("Found {} instruments in Redis", instruments.size());
-
-            InstrumentManager.getInstance().initialize();
-            splash.completeTask("Loaded instrument configurations");
-
-            UserConfigManager.getInstance();
             UserConfigManager.getInstance().initialize();
-
             splash.completeTask("Loaded user configuration");
 
-            // Initialize SessionManager AFTER instruments are loaded
-            SessionManager sessionManager = SessionManager.getInstance();
-            sessionManager.initialize();
-            logger.info("Session manager initialized");
+            SessionManager.getInstance().initialize();
             splash.completeTask("Initialized session manager");
 
-            // Ensure channel consistency in PlayerManager
-            // Initialize PlayerManager explicitly and then ensure channel consistency
-            PlayerManager.getInstance().initialize();
-            PlayerManager.getInstance().ensureChannelConsistency();
+            PlaybackService.getInstance().ensureChannelConsistency();
 
-            // Signal system ready - this will trigger waiting sequencers to initialize
             CommandBus.getInstance().publish(Commands.SYSTEM_READY, App.class, null);
             logger.info("System initialization complete");
 

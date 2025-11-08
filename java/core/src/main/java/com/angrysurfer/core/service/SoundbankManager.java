@@ -1,19 +1,40 @@
 package com.angrysurfer.core.service;
 
-import com.angrysurfer.core.api.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.sound.midi.Instrument;
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Soundbank;
+import javax.sound.midi.Synthesizer;
+import javax.swing.JComboBox;
+
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
 import com.angrysurfer.core.api.midi.MidiControlMessageEnum;
 import com.angrysurfer.core.event.PlayerPresetChangeEvent;
 import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
-import com.angrysurfer.core.model.preset.*;
+import com.angrysurfer.core.model.preset.BankItem;
+import com.angrysurfer.core.model.preset.DrumItem;
+import com.angrysurfer.core.model.preset.PresetItem;
+import com.angrysurfer.core.model.preset.SoundbankItem;
+import com.angrysurfer.core.model.preset.SynthData;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.*;
-import javax.swing.*;
-import java.io.File;
-import java.util.*;
 
 public class SoundbankManager implements IBusListener {
 
@@ -332,7 +353,7 @@ public class SoundbankManager implements IBusListener {
      */
     public boolean loadInstrument(Instrument instrument) {
         try {
-            Synthesizer synth = InternalSynthManager.getInstance().getSynthesizer();
+            Synthesizer synth = MidiService.getInstance().getSynthesizer();
             if (synth == null || !synth.isOpen()) {
                 return false;
             }
@@ -795,9 +816,8 @@ public class SoundbankManager implements IBusListener {
                 instrument.setPreset(preset);
             }
 
-            // For internal synth, use direct channel access
-            if (InternalSynthManager.getInstance().isInternalSynthInstrument(instrument)) {
-                Synthesizer synth = InternalSynthManager.getInstance().getSynthesizer();
+            if (MidiService.getInstance().isInternalSynth(instrument)) {
+                Synthesizer synth = MidiService.getInstance().getSynthesizer();
                 if (synth != null && synth.isOpen()) {
                     MidiChannel[] channels = synth.getChannels();
                     if (channels != null && channel < channels.length) {
@@ -861,12 +881,10 @@ public class SoundbankManager implements IBusListener {
                 return false;
             }
 
-            // Determine if this is an internal or external instrument
-            boolean isInternalSynth = InternalSynthManager.getInstance().isInternalSynthInstrument(instrument);
+            boolean isInternalSynth = MidiService.getInstance().isInternalSynth(instrument);
 
             if (isInternalSynth) {
-                // Get the synthesizer from InternalSynthManager for consistency
-                Synthesizer synth = InternalSynthManager.getInstance().getSynthesizer();
+                Synthesizer synth = MidiService.getInstance().getSynthesizer();
                 if (synth == null || !synth.isOpen()) {
                     logger.warn("Synthesizer not available");
                     return false;
@@ -1110,7 +1128,7 @@ public class SoundbankManager implements IBusListener {
                 );
             } else if (presetNumber != null && instrument.getChannel() == SequencerConstants.MIDI_DRUM_CHANNEL) {
                 player.setRootNote(presetNumber);
-                player.setName(InternalSynthManager.getInstance().getDrumName(presetNumber));
+                player.setName(SoundbankService.getInstance().getDrumName(presetNumber));
                 // Create a preset change event
                 CommandBus.getInstance().publish(
                         Commands.PLAYER_UPDATE_EVENT,
@@ -1247,11 +1265,11 @@ public class SoundbankManager implements IBusListener {
                 // For drum channel, play root note or default kick drum
                 if (player.getChannel() == SequencerConstants.MIDI_DRUM_CHANNEL) {
                     int noteNumber = player.getRootNote() != null ? player.getRootNote() : 36; // Default to kick
-                    InternalSynthManager.getInstance().playNote(noteNumber, 100, durationMs, 9);
+                    MidiService.getInstance().playNote(noteNumber, 100, 9);
                     player.noteOn(noteNumber, 100, durationMs);
                 } else {
                     // For melodic instruments, play middle C
-                    InternalSynthManager.getInstance().playNote(60, 100, durationMs, player.getChannel());
+                    MidiService.getInstance().playNote(60, 100, player.getChannel());
                     player.noteOn(60, 100, durationMs);
                 }
             }

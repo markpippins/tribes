@@ -3,7 +3,7 @@ package com.angrysurfer.core.model;
 import com.angrysurfer.core.api.midi.MidiControlMessageEnum;
 import com.angrysurfer.core.model.feature.Pad;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.ReceiverManager;
+import com.angrysurfer.core.service.MidiService;
 import com.angrysurfer.core.util.IntegerArrayConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
@@ -245,13 +245,10 @@ public final class InstrumentWrapper implements Serializable {
                 }
             }
 
-            // Last resort: try ReceiverManager
             if (deviceName != null) {
-                Receiver managedReceiver = ReceiverManager.getInstance()
-                        .getOrCreateReceiver(deviceName, device);
+                Receiver managedReceiver = MidiService.getInstance().getReceiver(deviceName);
                 if (managedReceiver != null) {
                     managedReceiver.send(message, -1);
-                    // Save for future use
                     this.receiver = managedReceiver;
                     return;
                 }
@@ -280,11 +277,9 @@ public final class InstrumentWrapper implements Serializable {
                 return;
             }
 
-            // If we have a device name, try ReceiverManager
             if (deviceName != null) {
-                this.receiver = ReceiverManager.getInstance()
-                        .getOrCreateReceiver(deviceName, device);
-                logger.info("Recovered receiver from ReceiverManager");
+                this.receiver = MidiService.getInstance().getReceiver(deviceName);
+                logger.info("Recovered receiver from MidiService");
             }
         } catch (Exception e) {
             logger.error("Failed to recover receiver: {}", e.getMessage());
@@ -435,9 +430,8 @@ public final class InstrumentWrapper implements Serializable {
             }
         }
 
-        // Also tell the ReceiverManager to clean up
         if (deviceName != null) {
-            ReceiverManager.getInstance().closeReceiver(deviceName);
+            MidiService.getInstance().closeReceiver(deviceName);
         }
     }
 
@@ -512,16 +506,14 @@ public final class InstrumentWrapper implements Serializable {
             }
         }
 
-        // Last resort: try ReceiverManager
         if (deviceName != null) {
             try {
-                receiver = ReceiverManager.getInstance()
-                        .getOrCreateReceiver(deviceName, device);
+                receiver = MidiService.getInstance().getReceiver(deviceName);
                 if (receiver != null) {
                     return receiver;
                 }
             } catch (Exception e) {
-                logger.warn("Could not get receiver from ReceiverManager: {}", e.getMessage());
+                logger.warn("Could not get receiver from MidiService: {}", e.getMessage());
             }
         }
 

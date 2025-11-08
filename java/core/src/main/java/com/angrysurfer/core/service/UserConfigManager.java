@@ -1,5 +1,21 @@
 package com.angrysurfer.core.service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Synthesizer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.config.UserConfig;
@@ -11,18 +27,9 @@ import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.redis.UserConfigHelper;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.ShortMessage;
-import javax.sound.midi.Synthesizer;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -63,10 +70,16 @@ public class UserConfigManager {
         meloInst.setInternalSynth(true);
         meloInst.setIsDefault(true);
 
-        // Set up with InternalSynthManager - get device info and receiver
-        meloInst.setDeviceInfo(InternalSynthManager.getInstance().getSynthesizer().getDeviceInfo());
-        meloInst.setDeviceName(SequencerConstants.GERVILL);
-        meloInst.setReceiver(InternalSynthManager.getInstance().getSynthesizer().getReceiver());
+        Synthesizer synth = MidiService.getInstance().getSynthesizer();
+        if (synth != null) {
+            meloInst.setDeviceInfo(synth.getDeviceInfo());
+            meloInst.setDeviceName(SequencerConstants.GERVILL);
+            try {
+                meloInst.setReceiver(synth.getReceiver());
+            } catch (Exception e) {
+                logger.warn("Could not get receiver for melodic instrument", e);
+            }
+        }
 
         // Set melodic-specific properties
         meloInst.setBankIndex(0); // Standard melodic bank
@@ -95,10 +108,16 @@ public class UserConfigManager {
         drumInst.setInternalSynth(true);
         drumInst.setIsDefault(true);
 
-        // Set up with InternalSynthManager - get device info and receiver
-        drumInst.setDeviceInfo(InternalSynthManager.getInstance().getSynthesizer().getDeviceInfo());
-        drumInst.setDeviceName(SequencerConstants.GERVILL);
-        drumInst.setReceiver(InternalSynthManager.getInstance().getSynthesizer().getReceiver());
+        Synthesizer synth = MidiService.getInstance().getSynthesizer();
+        if (synth != null) {
+            drumInst.setDeviceInfo(synth.getDeviceInfo());
+            drumInst.setDeviceName(SequencerConstants.GERVILL);
+            try {
+                drumInst.setReceiver(synth.getReceiver());
+            } catch (Exception e) {
+                logger.warn("Could not get receiver for drum instrument", e);
+            }
+        }
 
         // Set drum-specific properties
         // drumInst.setBankIndex(128); // Standard drum bank
@@ -342,8 +361,7 @@ public class UserConfigManager {
             if (!hasGervill) {
                 logger.info("Adding Gervill instrument to configuration");
 
-                // Get Gervill from InternalSynthManager
-                Synthesizer synth = InternalSynthManager.getInstance().getSynthesizer();
+                Synthesizer synth = MidiService.getInstance().getSynthesizer();
                 if (synth != null) {
                     InstrumentWrapper gervillInstrument = new InstrumentWrapper(
                             SequencerConstants.GERVILL,
@@ -727,7 +745,7 @@ public class UserConfigManager {
     private void createDefaultDrumPlayers(List<Strike> playerList) {
         logger.info("Creating default drum players");
 
-        InternalSynthManager synthManager = InternalSynthManager.getInstance();
+
 
         // Standard GM drum kit starts at note 35/36
         try {
@@ -785,7 +803,7 @@ public class UserConfigManager {
             // Assign presets that make musical sense grouped by families:
             // 0-7: Pianos, 8-15: Chromatic, 16-23: Organ, 24-31: Guitar, etc.
             int preset = (i * 8) % 127; // Jump through sound families
-            String name = InternalSynthManager.getInstance().getGeneralMIDIPresetNames().get(preset);
+            String name = SoundbankService.getInstance().getGeneralMIDIPresetNames().get(preset);
 
             // Create the melodic player
             Note player = new Note();

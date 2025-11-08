@@ -516,9 +516,11 @@ public class PlayersTable extends JTable {
             }
             tableModel.setValueAt(ownerName, modelRow, tableModel.getColumnIndex(PlayersTableModel.COL_OWNER));
 
-            // Special handling for instrument column
-            tableModel.updateInstrumentCell(tableModel.getDataVector().get(modelRow),
-                    tableModel.getColumnIndex(PlayersTableModel.COL_INSTRUMENT), player);
+        // Special handling for instrument column
+        @SuppressWarnings("unchecked")
+        java.util.Vector<Object> rowVector = (java.util.Vector<Object>) tableModel.getDataVector().get(modelRow);
+        tableModel.updateInstrumentCell(rowVector,
+            tableModel.getColumnIndex(PlayersTableModel.COL_INSTRUMENT), player);
 
             // Notify the model that data has changed
             tableModel.fireTableRowsUpdated(modelRow, modelRow);
@@ -637,37 +639,34 @@ public class PlayersTable extends JTable {
     }
 
     private void setupMouseWheel() {
-        addMouseWheelListener(new java.awt.event.MouseWheelListener() {
-            @Override
-            public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
-                // Get the parent scroll pane if available
-                java.awt.Container parent = getParent();
-                while (parent != null && !(parent instanceof javax.swing.JScrollPane)) {
-                    parent = parent.getParent();
+        addMouseWheelListener((java.awt.event.MouseWheelEvent e) -> {
+            // Get the parent scroll pane if available
+            java.awt.Container parent = getParent();
+            while (parent != null && !(parent instanceof javax.swing.JScrollPane)) {
+                parent = parent.getParent();
+            }
+
+            if (parent != null) {
+                // We have a scroll pane, let's scroll it
+                javax.swing.JScrollPane scrollPane = (javax.swing.JScrollPane) parent;
+
+                // Get the current scroll position
+                int currentPosition = scrollPane.getVerticalScrollBar().getValue();
+
+                // Calculate scroll amount - faster when modifier keys are pressed
+                int scrollAmount = e.getUnitsToScroll() * getRowHeight();
+                if (e.isShiftDown()) {
+                    scrollAmount *= 3; // Scroll 3x faster with shift
+                }
+                if (e.isControlDown()) {
+                    scrollAmount *= 5; // Scroll 5x faster with control
                 }
 
-                if (parent != null) {
-                    // We have a scroll pane, let's scroll it
-                    javax.swing.JScrollPane scrollPane = (javax.swing.JScrollPane) parent;
+                // Apply the new scroll position
+                scrollPane.getVerticalScrollBar().setValue(currentPosition + scrollAmount);
 
-                    // Get the current scroll position
-                    int currentPosition = scrollPane.getVerticalScrollBar().getValue();
-
-                    // Calculate scroll amount - faster when modifier keys are pressed
-                    int scrollAmount = e.getUnitsToScroll() * getRowHeight();
-                    if (e.isShiftDown()) {
-                        scrollAmount *= 3; // Scroll 3x faster with shift
-                    }
-                    if (e.isControlDown()) {
-                        scrollAmount *= 5; // Scroll 5x faster with control
-                    }
-
-                    // Apply the new scroll position
-                    scrollPane.getVerticalScrollBar().setValue(currentPosition + scrollAmount);
-
-                    // Consume the event so it doesn't propagate
-                    e.consume();
-                }
+                // Consume the event so it doesn't propagate
+                e.consume();
             }
         });
     }

@@ -580,9 +580,9 @@ public class MelodicSequencerManager extends DefaultBusListener {
                 instrument.setDeviceName(deviceName);
             }
 
-            MidiDevice device = DeviceManager.getMidiDevice(deviceName);
+            MidiDevice device = MidiService.getInstance().getDevice(deviceName);
             if (device == null) {
-                device = DeviceManager.getInstance().getDefaultOutputDevice();
+                device = MidiService.getInstance().getDefaultOutputDevice();
                 if (device != null) {
                     deviceName = device.getDeviceInfo().getName();
                     instrument.setDeviceName(deviceName);
@@ -594,8 +594,7 @@ public class MelodicSequencerManager extends DefaultBusListener {
                     device.open();
                 }
                 instrument.setDevice(device);
-
-                Receiver receiver = ReceiverManager.getInstance().getOrCreateReceiver(deviceName, device);
+                Receiver receiver = MidiService.getInstance().getReceiver(deviceName);
                 if (receiver != null) {
                     logger.info("Successfully reconnected sequencer {} to device {}", id, deviceName);
 
@@ -652,8 +651,7 @@ public class MelodicSequencerManager extends DefaultBusListener {
         }
 
         if (player.getInstrument() != null) {
-            DeviceManager.getInstance();
-            MidiDevice device = DeviceManager.getMidiDevice(player.getInstrument().getDeviceName());
+            MidiDevice device = MidiService.getInstance().getDevice(player.getInstrument().getDeviceName());
             if (device != null) {
                 if (!device.isOpen()) {
                     try {

@@ -20,6 +20,7 @@ import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.service.DeviceManager;
 import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.service.PlayerManager;
 
 public class PlayersTableModel extends DefaultTableModel {
     private static final Logger logger = LoggerFactory.getLogger(PlayersTableModel.class.getName());
@@ -109,7 +110,7 @@ public class PlayersTableModel extends DefaultTableModel {
         return new ArrayList<>(COLUMNS).indexOf(columnName);
     }
 
-    public void updateInstrumentCell(Vector rowData, int columnIndex, Player player) {
+    public void updateInstrumentCell(Vector<Object> rowData, int columnIndex, Player player) {
         String instrumentName = "";
 
         try {
@@ -175,7 +176,9 @@ public class PlayersTableModel extends DefaultTableModel {
             setValueAt(ownerName, modelRow, getColumnIndex(COL_OWNER));
 
             // Special handling for instrument column
-            updateInstrumentCell(getDataVector().get(modelRow), getColumnIndex(COL_INSTRUMENT), player);
+            @SuppressWarnings("unchecked")
+            Vector<Object> rowVector = (Vector<Object>) getDataVector().get(modelRow);
+            updateInstrumentCell(rowVector, getColumnIndex(COL_INSTRUMENT), player);
 
             fireTableRowsUpdated(modelRow, modelRow);
         } catch (Exception e) {
@@ -278,6 +281,7 @@ public class PlayersTableModel extends DefaultTableModel {
         return HIDDEN_COLUMN_NAMES;
     }
 
+    @Override
     public void removeRow(int modelRowIndex) {
         if (modelRowIndex >= 0 && modelRowIndex < getRowCount()) {
             // Remove the row
@@ -290,14 +294,14 @@ public class PlayersTableModel extends DefaultTableModel {
     public void handleCommandBusAction(String command, Object actionData) {
         switch (command) {
         case Commands.NEW_VALUE_VELOCITY_MIN, Commands.NEW_VALUE_VELOCITY_MAX -> {
-            if (actionData instanceof Object[] data && data.length >= 2) {
-                if (data[0] instanceof Long playerId && data[1] instanceof Long value) {
+            if (actionData instanceof Object[] data && data.length >= 1) {
+                if (data[0] instanceof Long playerId) {
                     SwingUtilities.invokeLater(() -> {
                         // Find player in table
                         int rowIndex = findPlayerRowIndexById(playerId);
                         if (rowIndex >= 0) {
-                            // Get player
-                            Player player = getPlayerAtRow(rowIndex);
+                            // Get player via PlayerManager
+                            Player player = PlayerManager.getInstance().getPlayerById(playerId);
                             if (player != null) {
                                 // Update table row
                                 updatePlayerRow(player);
@@ -311,7 +315,14 @@ public class PlayersTableModel extends DefaultTableModel {
     }
 
     private Player getPlayerAtRow(int rowIndex) {
-        // Assuming Player objects are stored in the table model
-        return (Player) getValueAt(rowIndex, getColumnIndex(COL_ID));
+        // The model stores the player ID in the ID column. Use PlayerManager to look up the Player.
+        Object idValue = getValueAt(rowIndex, getColumnIndex(COL_ID));
+        if (idValue instanceof Long playerId) {
+            return PlayerManager.getInstance().getPlayerById(playerId);
+        }
+        if (idValue instanceof Player p) {
+            return p;
+        }
+        return null;
     }
 }

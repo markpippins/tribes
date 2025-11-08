@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.Receiver;
+import javax.sound.midi.Synthesizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -445,12 +446,10 @@ public class DrumSequencerManager implements IBusListener {
         return connectedCount == SequencerConstants.DRUM_PAD_COUNT;
     }
 
-    /**
-     * Ensure internal synthesizer is available
-     */
     private void ensureInternalSynthAvailable() {
-        if (!InternalSynthManager.getInstance().checkInternalSynthAvailable()) {
-            InternalSynthManager.getInstance().initializeSynthesizer();
+        Synthesizer synth = MidiService.getInstance().getSynthesizer();
+        if (synth == null || !synth.isOpen()) {
+            MidiService.getInstance().initialize();
             logger.info("Initialized internal synth for drum sequencer");
         }
     }
@@ -459,13 +458,11 @@ public class DrumSequencerManager implements IBusListener {
      * Get a default MIDI device to use as fallback
      */
     private MidiDevice getDefaultMidiDevice() {
-        // First try to get the default output device
-        MidiDevice device = DeviceManager.getInstance().getDefaultOutputDevice();
+        MidiDevice device = MidiService.getInstance().getDefaultOutputDevice();
 
-        // If that fails, try to get Gervill specifically
         if (device == null) {
             logger.debug("No default output device available, trying Gervill");
-            device = DeviceManager.getMidiDevice(SequencerConstants.GERVILL);
+            device = MidiService.getInstance().getDevice(SequencerConstants.GERVILL);
 
             // Make sure it's open
             if (device != null && !device.isOpen()) {
@@ -539,7 +536,7 @@ public class DrumSequencerManager implements IBusListener {
             String deviceName = instrument.getDeviceName();
 
             if (deviceName != null && !deviceName.isEmpty()) {
-                device = DeviceManager.getInstance().acquireDevice(deviceName);
+                device = MidiService.getInstance().getDevice(deviceName);
                 if (device != null && !device.isOpen()) {
                     try {
                         device.open();
@@ -560,9 +557,8 @@ public class DrumSequencerManager implements IBusListener {
                 logger.debug("Using default device {} for drum {}", deviceName, drumIndex);
             }
 
-            // Strategy 3: Try Gervill specifically as last resort
             if (device == null) {
-                device = DeviceManager.getMidiDevice(SequencerConstants.GERVILL);
+                device = MidiService.getInstance().getDevice(SequencerConstants.GERVILL);
                 if (device != null) {
                     if (!device.isOpen()) {
                         device.open();
@@ -576,9 +572,7 @@ public class DrumSequencerManager implements IBusListener {
             // Now get a receiver for the device
             if (device != null) {
                 instrument.setDevice(device);
-
-                Receiver receiver = ReceiverManager.getInstance()
-                        .getOrCreateReceiver(deviceName, device);
+                Receiver receiver = MidiService.getInstance().getReceiver(deviceName);
 
                 if (receiver != null) {
                     instrument.setReceiver(receiver);
@@ -628,8 +622,7 @@ public class DrumSequencerManager implements IBusListener {
     public void repairAllMidiConnections() {
         logger.info("Attempting to repair MIDI connections for all drum sequencers");
 
-        // First clear all existing receivers
-        ReceiverManager.getInstance().clearAllReceivers();
+        MidiService.getInstance().clearAllReceivers();
 
         // Process each sequencer
         for (DrumSequencer sequencer : sequencers) {
@@ -661,9 +654,9 @@ public class DrumSequencerManager implements IBusListener {
                     instrument.setDeviceName(deviceName);
                 }
 
-                MidiDevice device = DeviceManager.getMidiDevice(deviceName);
+                MidiDevice device = MidiService.getInstance().getDevice(deviceName);
                 if (device == null) {
-                    device = DeviceManager.getInstance().getDefaultOutputDevice();
+                    device = MidiService.getInstance().getDefaultOutputDevice();
                     if (device != null) {
                         deviceName = device.getDeviceInfo().getName();
                         instrument.setDeviceName(deviceName);
@@ -681,10 +674,8 @@ public class DrumSequencerManager implements IBusListener {
                         }
                     }
 
-                    // Set device and get receiver
                     instrument.setDevice(device);
-                    Receiver receiver = ReceiverManager.getInstance()
-                            .getOrCreateReceiver(deviceName, device);
+                    Receiver receiver = MidiService.getInstance().getReceiver(deviceName);
 
                     if (receiver != null) {
                         instrument.setReceiver(receiver);

@@ -259,7 +259,7 @@ public class PlayerManagerDiagnostics {
             log.addSection("Preset Application Test");
             if (player.getInstrument() != null && player.getInstrument().getPreset() != null) {
                 try {
-                    manager.applyPlayerPreset(player);
+                    manager.applyInstrumentPreset(player);
                     log.addLine("Successfully applied preset: " + player.getInstrument().getPreset());
                 } catch (Exception e) {
                     log.addError("Failed to apply preset: " + e.getMessage());

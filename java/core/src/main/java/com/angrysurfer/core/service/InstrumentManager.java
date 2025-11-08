@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.sound.midi.MidiDevice;
+import javax.sound.midi.Synthesizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -361,9 +362,8 @@ public class InstrumentManager implements IBusListener {
             return instrument;
         }
 
-        // Next try by device name and channel
         for (InstrumentWrapper cached : instrumentCache.values()) {
-            if (InternalSynthManager.getInstance().isInternalSynthInstrument(cached) &&
+            if (MidiService.getInstance().isInternalSynth(cached) &&
                     cached.getChannel() != null &&
                     cached.getChannel() == channel &&
                     (!exclusive || !cached.getAssignedToPlayer())) {
@@ -373,10 +373,9 @@ public class InstrumentManager implements IBusListener {
             }
         }
 
-        // No instrument found, create a new one using InternalSynthManager
         boolean isDrumChannel = (channel == SequencerConstants.MIDI_DRUM_CHANNEL);
-        instrument = InternalSynthManager.getInstance().createInternalInstrument(
-                channel, isDrumChannel, isDrumChannel ? "Internal Drums " + tag : "Internal Melo " + channel + "-" + tag);
+        String name = isDrumChannel ? "Internal Drums " + tag : "Internal Melo " + channel + "-" + tag;
+        instrument = createInternalInstrument(name, channel);
 
         if (instrument != null) {
             // Store in our cache
@@ -616,6 +615,32 @@ public class InstrumentManager implements IBusListener {
         } catch (Exception e) {
             logger.error("Error creating default drum kit: {}", e.getMessage(), e);
             return new ArrayList<>();
+        }
+    }
+
+    private InstrumentWrapper createInternalInstrument(String name, int channel) {
+        try {
+            Synthesizer synth = MidiService.getInstance().getSynthesizer();
+            if (synth == null) return null;
+
+            InstrumentWrapper instrument = new InstrumentWrapper(name, synth, channel);
+            instrument.setInternal(true);
+            instrument.setInternalSynth(true);
+            instrument.setDeviceName(SequencerConstants.GERVILL);
+            instrument.setBankIndex(0);
+            instrument.setPreset(0);
+            instrument.setId(instrumentHelper.getNextInstrumentId());
+
+            try {
+                instrument.setReceiver(synth.getReceiver());
+            } catch (Exception e) {
+                logger.warn("Could not get receiver for internal instrument", e);
+            }
+
+            return instrument;
+        } catch (Exception e) {
+            logger.error("Error creating internal instrument", e);
+            return null;
         }
     }
 
