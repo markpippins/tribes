@@ -1,19 +1,28 @@
 package com.angrysurfer.core.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.Receiver;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.event.DrumStepUpdateEvent;
 import com.angrysurfer.core.event.NoteEvent;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.sequencer.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.Receiver;
-import javax.sound.midi.Synthesizer;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import com.angrysurfer.core.sequencer.DrumSequenceData;
+import com.angrysurfer.core.sequencer.DrumSequencer;
+import com.angrysurfer.core.sequencer.MelodicSequenceData;
+import com.angrysurfer.core.sequencer.MelodicSequenceModifier;
+import com.angrysurfer.core.sequencer.MelodicSequencer;
+import com.angrysurfer.core.sequencer.SequencerConstants;
 
 /**
  * Unified sequencer service - manages both drum and melodic sequencers.
@@ -67,6 +76,11 @@ public class SequencerService {
         return sequencer;
     }
 
+    public synchronized DrumSequencer newSequencer(Consumer<NoteEvent> noteListener, 
+                                                   Consumer<DrumStepUpdateEvent> stepListener) {
+        return createDrumSequencer(noteListener, stepListener);
+    }
+
     public DrumSequencer getDrumSequencer(int index) {
         if (index >= 0 && index < drumSequencers.size()) {
             return drumSequencers.get(index);
@@ -108,6 +122,152 @@ public class SequencerService {
         }
     }
 
+    public boolean loadSequence(Long id, DrumSequencer sequencer) {
+        try {
+            DrumSequenceData data = loadDrumSequence(id);
+            if (data != null) {
+                sequencer.setSequenceData(data);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            logger.error("Error loading sequence into sequencer", e);
+            return false;
+        }
+    }
+
+    public Long getNextSequenceId(Long currentId) {
+        try {
+            return redisService.getNextDrumSequenceId(currentId);
+        } catch (Exception e) {
+            logger.error("Error getting next sequence ID", e);
+            return null;
+        }
+    }
+
+    public Long getPreviousSequenceId(Long currentId) {
+        try {
+            return redisService.getPreviousDrumSequenceId(currentId);
+        } catch (Exception e) {
+            logger.error("Error getting previous sequence ID", e);
+            return null;
+        }
+    }
+
+    public Long getLastSequenceId() {
+        try {
+            return redisService.getMaximumDrumSequenceId();
+        } catch (Exception e) {
+            logger.error("Error getting last sequence ID", e);
+            return null;
+        }
+    }
+
+    public List<DrumSequencer> getAllSequencers() {
+        return getAllDrumSequencers();
+    }
+
+    public Long saveSequence(DrumSequencer sequencer) {
+        return saveDrumSequence(sequencer);
+    }
+
+    public Long saveSequence(MelodicSequencer sequencer) {
+        return saveMelodicSequence(sequencer);
+    }
+
+    public void refreshSequenceList() {
+        // Placeholder - UI can refresh from Redis directly
+        logger.debug("Sequence list refresh requested");
+    }
+
+    public DrumSequencer createNewSequence() {
+        return createDrumSequencer();
+    }
+
+    public DrumSequenceData createNewSequenceData() {
+        DrumSequenceData data = new DrumSequenceData();
+        Long maxId = redisService.getMaximumDrumSequenceId();
+        Long nextId = (maxId != null) ? maxId + 1 : 1L;
+        data.setId(nextId);
+        return data;
+    }
+
+    public MelodicSequenceData getSequenceData(Integer sequencerId, Long sequenceId) {
+        return loadMelodicSequence(sequenceId, sequencerId);
+    }
+
+    public java.util.List<Long> getAllMelodicSequenceIds(Integer sequencerId) {
+        try {
+            return redisService.getAllMelodicSequenceIds(sequencerId);
+        } catch (Exception e) {
+            logger.error("Error getting melodic sequence IDs", e);
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    public java.util.List<Long> getAllDrumSequenceIds() {
+        try {
+            return redisService.getAllDrumSequenceIds();
+        } catch (Exception e) {
+            logger.error("Error getting drum sequence IDs", e);
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    public MelodicSequencer getActiveSequencer() {
+        // Return the first melodic sequencer or null
+        if (!melodicSequencers.isEmpty()) {
+            return melodicSequencers.values().iterator().next();
+        }
+        return null;
+    }
+
+    public boolean hasSequences() {
+        try {
+            List<Long> ids = redisService.getAllDrumSequenceIds();
+            return ids != null && !ids.isEmpty();
+        } catch (Exception e) {
+            logger.error("Error checking for drum sequences", e);
+            return false;
+        }
+    }
+
+    public Long getFirstSequenceId() {
+        try {
+            return redisService.getMinimumDrumSequenceId();
+        } catch (Exception e) {
+            logger.error("Error getting first drum sequence ID", e);
+            return null;
+        }
+    }
+
+    public Long getLastSequenceId(Integer sequencerId) {
+        try {
+            return redisService.getMaximumMelodicSequenceId(sequencerId);
+        } catch (Exception e) {
+            logger.error("Error getting last melodic sequence ID", e);
+            return null;
+        }
+    }
+
+    public Long getPreviousSequenceId(Integer sequencerId, Long currentId) {
+        try {
+            return redisService.getPreviousMelodicSequenceId(sequencerId, currentId);
+        } catch (Exception e) {
+            logger.error("Error getting previous melodic sequence ID", e);
+            return null;
+        }
+    }
+
+    public Long getNextSequenceId(Integer sequencerId, Long currentId) {
+        try {
+            return redisService.getNextMelodicSequenceId(sequencerId, currentId);
+        } catch (Exception e) {
+            logger.error("Error getting next melodic sequence ID", e);
+            return null;
+        }
+    }
+
     // ========== Melodic Sequencer Methods ==========
 
     public MelodicSequencer createMelodicSequencer(int id) {
@@ -122,8 +282,39 @@ public class SequencerService {
         return sequencer;
     }
 
+    public MelodicSequencer newSequencer(int id) {
+        return createMelodicSequencer(id);
+    }
+
     public MelodicSequencer getMelodicSequencer(int id) {
         return melodicSequencers.get(id);
+    }
+
+    public MelodicSequencer getSequencer(int id) {
+        return getMelodicSequencer(id);
+    }
+
+    public int getSequencerCount() {
+        return melodicSequencers.size();
+    }
+
+    public boolean hasSequences(Integer sequencerId) {
+        try {
+            List<Long> ids = redisService.getAllMelodicSequenceIds(sequencerId);
+            return ids != null && !ids.isEmpty();
+        } catch (Exception e) {
+            logger.error("Error checking for sequences", e);
+            return false;
+        }
+    }
+
+    public Long getFirstSequenceId(Integer sequencerId) {
+        try {
+            return redisService.getMinimumMelodicSequenceId(sequencerId);
+        } catch (Exception e) {
+            logger.error("Error getting first sequence ID", e);
+            return null;
+        }
     }
 
     public List<MelodicSequencer> getAllMelodicSequencers() {

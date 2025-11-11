@@ -4,7 +4,7 @@ import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.PlaybackService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -116,7 +116,7 @@ public class PlayerEditPanel extends JPanel {
         handleDrumPlayerChanges();
 
         // Save through PlayerManager for consistency
-        PlayerManager.getInstance().savePlayerProperties(player);
+        PlaybackService.getInstance().savePlayer(player);
 
         // Request player update to notify other components
         /// requestPlayerUpdate();
@@ -161,7 +161,7 @@ public class PlayerEditPanel extends JPanel {
                         drumPlayer.setInstrumentId(player.getInstrument().getId());
 
                         // Save changes
-                        PlayerManager.getInstance().savePlayerProperties(drumPlayer);
+                        PlaybackService.getInstance().savePlayer(drumPlayer);
                     }
                 }
 

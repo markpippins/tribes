@@ -4,8 +4,8 @@ import com.angrysurfer.core.api.*;
 import com.angrysurfer.core.event.NoteEvent;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
-import com.angrysurfer.core.service.MelodicSequencerManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SequencerService;
+import com.angrysurfer.core.service.PlaybackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -357,7 +357,7 @@ public class GlobalMuteButtonsPanel extends JPanel implements IBusListener {
         buttonPanel.add(Box.createHorizontalStrut(12));
 
         // Create melodic sequencer mute buttons
-        for (int i = 0; i < MelodicSequencerManager.getInstance().getSequencerCount(); i++) {
+        for (int i = 0; i < SequencerService.getInstance().getSequencerCount(); i++) {
             JToggleButton muteButton = createMuteButton(i, false);
             buttonPanel.add(muteButton);
             melodicMuteButtons.add(muteButton);
@@ -510,7 +510,7 @@ public class GlobalMuteButtonsPanel extends JPanel implements IBusListener {
                         seqIndex, sequencer.getPlayer().getLevel());
 
                 // Ensure changes are persisted
-                PlayerManager.getInstance().savePlayerProperties(sequencer.getPlayer());
+                PlaybackService.getInstance().savePlayer(sequencer.getPlayer());
 
                 // Publish an event so other components can be notified
                 CommandBus.getInstance().publish(

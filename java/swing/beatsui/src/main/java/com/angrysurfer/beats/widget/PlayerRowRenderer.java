@@ -7,9 +7,9 @@ import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.MidiService;
 import com.angrysurfer.core.service.SessionManager;
-import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.SoundbankService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -108,7 +108,7 @@ public class PlayerRowRenderer extends DefaultTableCellRenderer implements IBusL
                     actualNote = Math.max(0, Math.min(127, actualNote));
 
                     // Get drum name from InternalSynthManager using the actual note
-                    String drumName = InternalSynthManager.getInstance().getDrumName(actualNote);
+                    String drumName = MidiService.getInstance().getDrumName(actualNote);
 
                     // Show drum name in the preset column
                     label.setText(drumName);
@@ -125,7 +125,7 @@ public class PlayerRowRenderer extends DefaultTableCellRenderer implements IBusL
                             player.getInstrument().getBankIndex() : 0;
 
                     // Get preset name using soundbank name and bank
-                    String presetName = InternalSynthManager.getInstance().getPresetNames(
+                    String presetName = SoundbankService.getInstance().getPresetNames(
                                     player.getInstrument().getSoundbankName(), bankIndex)
                             .stream()
                             .skip(presetValue)
@@ -151,9 +151,9 @@ public class PlayerRowRenderer extends DefaultTableCellRenderer implements IBusL
                 }
                 // For internal synth instruments, show preset name
                 else if (player.getInstrument() != null &&
-                        InternalSynthManager.getInstance().isInternalSynth(player.getInstrument())) {
+                        MidiService.getInstance().isInternalSynth(player.getInstrument())) {
                     // Get preset name from InternalSynthManager
-                    String presetName = SoundbankManager.getInstance().getPresetName(
+                    String presetName = SoundbankService.getInstance().getPresetName(
                             player.getInstrument().getId(),
                             value instanceof Number ? ((Number) value).longValue() : 0
                     );

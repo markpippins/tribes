@@ -1,13 +1,22 @@
 package com.angrysurfer.core.service;
 
-import com.angrysurfer.core.model.InstrumentWrapper;
-import com.angrysurfer.core.sequencer.SequencerConstants;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Synthesizer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sound.midi.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.angrysurfer.core.model.InstrumentWrapper;
+import com.angrysurfer.core.sequencer.SequencerConstants;
 
 /**
  * Unified MIDI service - handles devices, receivers, and the internal synthesizer.
@@ -84,6 +93,62 @@ public class MidiService {
                 deviceName.contains("Java Sound Synthesizer"));
     }
 
+    public String getDrumName(Integer noteNumber) {
+        if (noteNumber == null || noteNumber < 35 || noteNumber > 81) {
+            return "Unknown";
+        }
+        
+        String[] drumNames = {
+            "Acoustic Bass Drum", "Bass Drum 1", "Side Stick", "Acoustic Snare",
+            "Hand Clap", "Electric Snare", "Low Floor Tom", "Closed Hi-Hat",
+            "High Floor Tom", "Pedal Hi-Hat", "Low Tom", "Open Hi-Hat",
+            "Low-Mid Tom", "Hi-Mid Tom", "Crash Cymbal 1", "High Tom",
+            "Ride Cymbal 1", "Chinese Cymbal", "Ride Bell", "Tambourine",
+            "Splash Cymbal", "Cowbell", "Crash Cymbal 2", "Vibraslap",
+            "Ride Cymbal 2", "Hi Bongo", "Low Bongo", "Mute Hi Conga",
+            "Open Hi Conga", "Low Conga", "High Timbale", "Low Timbale",
+            "High Agogo", "Low Agogo", "Cabasa", "Maracas",
+            "Short Whistle", "Long Whistle", "Short Guiro", "Long Guiro",
+            "Claves", "Hi Wood Block", "Low Wood Block", "Mute Cuica",
+            "Open Cuica", "Mute Triangle", "Open Triangle"
+        };
+        
+        int index = noteNumber - 35;
+        if (index >= 0 && index < drumNames.length) {
+            return drumNames[index];
+        }
+        return "Unknown";
+    }
+
+    public boolean isInternalSynthInstrument(InstrumentWrapper instrument) {
+        return isInternalSynth(instrument);
+    }
+
+    public Receiver getOrCreateReceiver(String deviceName, MidiDevice device) {
+        Receiver cached = receiverCache.get(deviceName);
+        if (cached != null) {
+            return cached;
+        }
+
+        if (device == null) {
+            device = getDevice(deviceName);
+        }
+
+        if (device != null && openDevice(device)) {
+            try {
+                if (device.getMaxReceivers() != 0) {
+                    Receiver receiver = device.getReceiver();
+                    receiverCache.put(deviceName, receiver);
+                    return receiver;
+                }
+            } catch (Exception e) {
+                logger.error("Failed to get receiver for {}", deviceName, e);
+            }
+        }
+
+        return null;
+    }
+
     public void playNote(int note, int velocity, int channel) {
         if (synthesizer == null || !synthesizer.isOpen()) return;
         if (cachedChannels == null) cachedChannels = synthesizer.getChannels();
@@ -93,6 +158,20 @@ public class MidiService {
         if (midiChannel != null) {
             midiChannel.noteOn(note, velocity);
         }
+    }
+
+    public void playNote(int note, int velocity, int durationMs, int channel) {
+        playNote(note, velocity, channel);
+        
+        // Schedule note off after duration
+        new Thread(() -> {
+            try {
+                Thread.sleep(durationMs);
+                stopNote(note, channel);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
     }
 
     public void stopNote(int note, int channel) {
@@ -111,6 +190,17 @@ public class MidiService {
         if (cachedChannels == null) cachedChannels = synthesizer.getChannels();
         if (channel >= 0 && channel < cachedChannels.length) {
             cachedChannels[channel].controlChange(123, 0);
+        }
+    }
+
+    public void setControlChange(int channel, int ccNumber, int value) {
+        if (synthesizer == null || !synthesizer.isOpen()) return;
+        if (cachedChannels == null) cachedChannels = synthesizer.getChannels();
+        if (channel >= 0 && channel < cachedChannels.length) {
+            MidiChannel midiChannel = cachedChannels[channel];
+            if (midiChannel != null) {
+                midiChannel.controlChange(ccNumber, value);
+            }
         }
     }
 
@@ -135,6 +225,21 @@ public class MidiService {
             }
         }
         return null;
+    }
+
+    public MidiDevice getDevice(MidiDevice.Info info) {
+        if (info == null) return null;
+        
+        try {
+            MidiDevice device = MidiSystem.getMidiDevice(info);
+            if (device != null) {
+                deviceCache.put(info.getName(), device);
+            }
+            return device;
+        } catch (MidiUnavailableException e) {
+            logger.debug("Error accessing MIDI device: {}", info.getName());
+            return null;
+        }
     }
 
     public List<MidiDevice> getOutputDevices() {

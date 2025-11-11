@@ -7,8 +7,8 @@ import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.PlaybackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class DrumPresetPanel extends JPanel {
         presetsPanel.setLayout(new BoxLayout(presetsPanel, BoxLayout.Y_AXIS));
 
         // Get available drum instruments
-        List<InstrumentWrapper> drumInstruments = InstrumentManager.getInstance().getInstrumentHelper().findAllInstruments()
+        List<InstrumentWrapper> drumInstruments = PlaybackService.getInstance().getInstrumentHelper().findAllInstruments()
                 .stream().filter(i -> i.getChannel() == SequencerConstants.MIDI_DRUM_CHANNEL).toList();
 
         // For each drum pad, create a combo box for preset selection
@@ -178,7 +178,7 @@ public class DrumPresetPanel extends JPanel {
      * Reset all drums to default instruments
      */
     private void resetToDefaults() {
-        List<InstrumentWrapper> defaultInstruments = InstrumentManager.getInstance().getDefaultDrumKit();
+        List<InstrumentWrapper> defaultInstruments = PlaybackService.getInstance().getDefaultDrumKit();
 
         for (int i = 0; i < Math.min(SequencerConstants.DRUM_PAD_COUNT, defaultInstruments.size()); i++) {
             JComboBox<InstrumentWrapper> combo = presetCombos.get(i);
@@ -201,7 +201,7 @@ public class DrumPresetPanel extends JPanel {
      * Randomize all drum presets
      */
     private void randomizePresets() {
-        List<InstrumentWrapper> drumInstruments = InstrumentManager.getInstance().getDrumInstruments();
+        List<InstrumentWrapper> drumInstruments = PlaybackService.getInstance().getDrumInstruments();
         if (drumInstruments.isEmpty()) {
             return;
         }
@@ -233,8 +233,8 @@ public class DrumPresetPanel extends JPanel {
     private void applyChanges() {
         for (int i = 0; i < SequencerConstants.DRUM_PAD_COUNT; i++) {
             Player player = sequencer.getPlayers()[i];
-            PlayerManager.getInstance().savePlayerProperties(player);
-            PlayerManager.getInstance().applyInstrumentPreset(player);
+            PlaybackService.getInstance().savePlayer(player);
+            PlaybackService.getInstance().applyPreset(player);
         }
 
         // Notify that player instruments were changed

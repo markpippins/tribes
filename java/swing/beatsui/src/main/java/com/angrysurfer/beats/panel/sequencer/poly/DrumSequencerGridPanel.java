@@ -11,7 +11,7 @@ import com.angrysurfer.core.sequencer.DrumSequenceModifier;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingDivision;
-import com.angrysurfer.core.service.DrumSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -84,7 +84,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
         super(new BorderLayout());
 
         // Create the sequencer
-        sequencer = DrumSequencerManager.getInstance().newSequencer(
+        sequencer = SequencerService.getInstance().newSequencer(
                 noteEventConsumer,
                 event -> gridPanel.updateStepHighlighting(event.getDrumIndex(), event.getOldStep(),
                         event.getNewStep()));
@@ -98,7 +98,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
             @Override
             public void focusGained(FocusEvent e) {
                 requestFocusInWindow();
-//                selectDrumPad(DrumSequencerManager.getInstance().getSelectedPadIndex());
+//                selectDrumPad(SequencerService.getInstance().getSelectedPadIndex());
             }
         });
 
@@ -107,7 +107,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
             @Override
             public void componentShown(ComponentEvent e) {
                 requestFocusInWindow();
-                if (DrumSequencerManager.getInstance().getSelectedPadIndex() == -1)
+                if (SequencerService.getInstance().getSelectedPadIndex() == -1)
                     SwingUtilities.invokeLater(() -> selectDrumPad(0));
             }
         });
@@ -223,7 +223,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
                     com.angrysurfer.core.model.Player player = sequencer.getPlayers()[i];
                     if (player != null && player.getInstrument() != null) {
                         // Apply preset through PlayerManager
-                        com.angrysurfer.core.service.PlayerManager.getInstance().applyInstrumentPreset(player);
+                        com.angrysurfer.core.service.PlaybackService.getInstance().applyPreset(player);
 
                         // Log instrument details
                         logger.info("Refreshed drum {}: {} (bank={}, program={})",
@@ -278,7 +278,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
         isSelectingDrumPad = true;
         try {
             // Store the selected pad index
-            DrumSequencerManager.getInstance().setSelectedPadIndex(padIndex);
+            SequencerService.getInstance().setSelectedPadIndex(padIndex);
 
             // Tell sequencer about the selection (without sending another event back)
             sequencer.setSelectedPadIndex(padIndex);
@@ -322,15 +322,15 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
      */
     private void updateParameterControls() {
         // Check if we have a valid selection before updating
-        if (DrumSequencerManager.getInstance().getSelectedPadIndex() < 0
-                || DrumSequencerManager.getInstance().getSelectedPadIndex() >= SequencerConstants.DRUM_PAD_COUNT) {
+        if (SequencerService.getInstance().getSelectedPadIndex() < 0
+                || SequencerService.getInstance().getSelectedPadIndex() >= SequencerConstants.DRUM_PAD_COUNT) {
             // logger.warn("Cannot update parameters - invalid drum index: {}",
             // selectedPadIndex);
             return;
         }
 
         // Use the new panel's method to update controls
-        sequenceParamsPanel.updateControls(DrumSequencerManager.getInstance().getSelectedPadIndex());
+        sequenceParamsPanel.updateControls(SequencerService.getInstance().getSelectedPadIndex());
     }
 
     /**
@@ -376,7 +376,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
 
                     // Update the drum info panel
                     if (drumInfoPanel != null) {
-                        drumInfoPanel.updateInfo(DrumSequencerManager.getInstance().getSelectedPadIndex());
+                        drumInfoPanel.updateInfo(SequencerService.getInstance().getSelectedPadIndex());
                     }
 
                     // Reset all step highlighting
@@ -416,7 +416,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
                     }
 
                     // Update parameter controls if the selected drum was affected
-                    if (updatedDrums.contains(DrumSequencerManager.getInstance().getSelectedPadIndex())) {
+                    if (updatedDrums.contains(SequencerService.getInstance().getSelectedPadIndex())) {
                         updateParameterControls();
                     }
 
@@ -513,7 +513,7 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
             gridPanel.updateStepButtonsForDrum(drumIndex);
 
             // Update parameter controls if clearing the selected drum
-            if (drumIndex == DrumSequencerManager.getInstance().getSelectedPadIndex()) {
+            if (drumIndex == SequencerService.getInstance().getSelectedPadIndex()) {
                 updateParameterControls();
             }
         }

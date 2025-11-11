@@ -125,7 +125,7 @@ public class MelodicSequencerGeneratorPanel extends JPanel {
                 sequencer.setSequenceData(data);
 
                 // Save the changes to the sequence data
-                // MelodicSequencerManager.getInstance().saveSequence(sequencer);
+                // SequencerService.getInstance().saveSequence(sequencer);
                 CommandBus.getInstance().publish(
                         Commands.MELODIC_PATTERN_UPDATED,
                         sequencer,

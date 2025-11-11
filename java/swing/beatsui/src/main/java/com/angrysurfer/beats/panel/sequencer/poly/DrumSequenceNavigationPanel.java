@@ -6,7 +6,7 @@ import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.DrumSequenceData;
 import com.angrysurfer.core.sequencer.DrumSequencer;
-import com.angrysurfer.core.service.DrumSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ public class DrumSequenceNavigationPanel extends JPanel {
 
     private static final Logger logger = LoggerFactory.getLogger(DrumSequenceNavigationPanel.class);
     private final DrumSequencer sequencer;
-    private final DrumSequencerManager manager;
+    private final SequencerService manager;
     private JLabel sequenceIdLabel;
     private JButton firstButton;
     private JButton prevButton;
@@ -31,7 +31,7 @@ public class DrumSequenceNavigationPanel extends JPanel {
 
     public DrumSequenceNavigationPanel(DrumSequencer sequencer) {
         this.sequencer = sequencer;
-        this.manager = DrumSequencerManager.getInstance();
+        this.manager = SequencerService.getInstance();
 
         initializeUI();
     }
@@ -240,7 +240,7 @@ public class DrumSequenceNavigationPanel extends JPanel {
     private void createNewSequence() {
         try {
             // Create a new sequence with an assigned ID right away
-            DrumSequenceData newSequence = manager.createNewSequence();
+            DrumSequenceData newSequence = manager.createNewSequenceData();
 
             if (newSequence != null) {
                 // Apply the new sequence to the sequencer

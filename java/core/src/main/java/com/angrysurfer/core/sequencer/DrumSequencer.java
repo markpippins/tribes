@@ -28,12 +28,9 @@ import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.DrumSequencerManager;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.InternalSynthManager;
-import com.angrysurfer.core.service.PlayerManager;
-import com.angrysurfer.core.service.ReceiverManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.SequencerService;
 import com.angrysurfer.core.service.SessionManager;
 import com.angrysurfer.core.service.UserConfigManager;
 
@@ -83,20 +80,20 @@ public class DrumSequencer implements IBusListener {
     }
 
     /**
-     * Perform side-effectful initialization that requires other managers/singletons
+     * Perform side-effectful initialization that requires other services/singletons
      * to be available. This should be invoked by the central startup routine
-     * (for example App) once SessionManager, DeviceManager, PlayerManager, and
-     * InternalSynthManager have been initialized.
+     * (for example App) once SessionManager, MidiService, and PlaybackService
+     * have been initialized.
      */
     public synchronized void initialize() {
         // Make sure we have a working synthesizer
-        if (!InternalSynthManager.getInstance().checkInternalSynthAvailable()) {
+        if (MidiService.getInstance().getSynthesizer() == null) {
             logger.info("Initializing internal synthesizer for drum sequencer");
-            InternalSynthManager.getInstance().initializeSynthesizer();
+            MidiService.getInstance().initialize();
             usingInternalSynth = true;
         }
 
-        // Initialize players array (touches SessionManager, DeviceManager, PlayerManager)
+        // Initialize players array (touches SessionManager, MidiService, PlaybackService)
         initializePlayers();
 
         // Register with command and timing buses
@@ -131,10 +128,10 @@ public class DrumSequencer implements IBusListener {
         }
 
         // First try to get default MIDI device to reuse for all drum pads
-        MidiDevice defaultDevice = DeviceManager.getInstance().getDefaultOutputDevice();
+        MidiDevice defaultDevice = MidiService.getInstance().getDefaultOutputDevice();
         if (defaultDevice == null) {
             logger.warn("No default MIDI output device available, attempting to get Gervill");
-            defaultDevice = DeviceManager.getMidiDevice(SequencerConstants.GERVILL);
+            defaultDevice = MidiService.getInstance().getDevice(SequencerConstants.GERVILL);
             if (defaultDevice != null && !defaultDevice.isOpen()) {
                 try {
                     defaultDevice.open();
@@ -158,7 +155,7 @@ public class DrumSequencer implements IBusListener {
                 // Make sure the player has this sequencer as its owner
                 if (players[i].getOwner() != this) {
                     players[i].setOwner(this);
-                    //PlayerManager.getInstance().savePlayerProperties(players[i]);
+                    //PlaybackService.getInstance().savePlayer(players[i]);
                 }
 
                 InstrumentWrapper instrument = UserConfigManager.getInstance().findInstrumentById(existingPlayer.getInstrumentId());
@@ -170,11 +167,10 @@ public class DrumSequencer implements IBusListener {
                 players[i].setOwner(this);
                 players[i].setDefaultChannel(SequencerConstants.MIDI_DRUM_CHANNEL);
                 players[i].setRootNote(sequenceData.getRootNotes()[i]);
-                players[i].setName(
-                        InternalSynthManager.getInstance().getDrumName(SequencerConstants.MIDI_DRUM_NOTE_OFFSET + i));
+                players[i].setName("Drum " + i); // Simplified drum naming
 
-                // Use PlayerManager to initialize the instrument
-                PlayerManager.getInstance().initializeInternalInstrument(players[i], true, i);
+                // Use PlaybackService to initialize the instrument
+                PlaybackService.getInstance().initializeInternalInstrument(players[i], true, i);
                 players[i].getInstrument().setChannel(SequencerConstants.MIDI_DRUM_CHANNEL);
                 // Initialize device connections
                 initializeDrumPadConnections(i, defaultDevice);
@@ -240,7 +236,7 @@ public class DrumSequencer implements IBusListener {
 
             if (deviceName != null && !deviceName.isEmpty()) {
                 try {
-                    device = DeviceManager.getInstance().acquireDevice(deviceName);
+                    device = MidiService.getInstance().getDevice(deviceName);
                     if (device != null && !device.isOpen()) {
                         device.open();
                         logger.debug("Opened specified device {} for drum {}", deviceName, drumIndex);
@@ -263,7 +259,7 @@ public class DrumSequencer implements IBusListener {
             // If still no device, try Gervill specifically
             if (device == null) {
                 try {
-                    device = DeviceManager.getMidiDevice(SequencerConstants.GERVILL);
+                    device = MidiService.getInstance().getDevice(SequencerConstants.GERVILL);
                     if (device != null) {
                         if (!device.isOpen()) {
                             device.open();
@@ -283,9 +279,8 @@ public class DrumSequencer implements IBusListener {
                 // Also ensure the instrument has a receiver
                 try {
                     if (instrument.getReceiver() == null) {
-                        Receiver receiver = ReceiverManager.getInstance().getOrCreateReceiver(
-                                instrument.getDeviceName(),
-                                device);
+                        Receiver receiver = MidiService.getInstance().getReceiver(
+                                instrument.getDeviceName());
 
                         if (receiver != null) {
                             // UPDATED: Now directly set the receiver (no AtomicReference)
@@ -299,7 +294,7 @@ public class DrumSequencer implements IBusListener {
 
                 // Initialize the instrument's sound
                 try {
-                    PlayerManager.getInstance().applyInstrumentPreset(player);
+                    PlaybackService.getInstance().applyPreset(player);
                     logger.debug("Applied preset for drum {}", drumIndex);
                 } catch (Exception e) {
                     logger.warn("Could not apply preset for drum {}, {}", drumIndex, e.getMessage());
@@ -362,16 +357,14 @@ public class DrumSequencer implements IBusListener {
         // Store current playback state
         boolean wasPlaying = sequenceData.isPlaying();
 
-        // Get the manager
-        DrumSequencerManager manager = DrumSequencerManager.getInstance();
-
-        // Load the sequence
-        boolean loaded = manager.loadSequence(sequenceId, this);
+        // Load the sequence using SequencerService
+        DrumSequenceData loadedData = SequencerService.getInstance().loadDrumSequence(sequenceId);
+        boolean loaded = (loadedData != null);
 
         if (loaded) {
+            this.sequenceData = loadedData;
             logger.info("Loaded drum sequence: {}", sequenceId);
             logger.info(sequenceData.toString());
-            sequenceData.setId(sequenceId);
             updateDrumRootNotesFromData();
             // Immediately update visual indicators without resetting
             if (stepUpdateListener != null) {
@@ -400,11 +393,8 @@ public class DrumSequencer implements IBusListener {
      */
     private void loadFirstSequence() {
         try {
-            // Get the manager
-            DrumSequencerManager manager = DrumSequencerManager.getInstance();
-
-            // Get the first sequence ID
-            Long firstId = manager.getFirstSequenceId();
+            // Get the first sequence ID from Redis
+            Long firstId = RedisService.getInstance().getMinimumDrumSequenceId();
 
             if (firstId != null) {
                 // Use our loadSequence method
@@ -622,7 +612,7 @@ public class DrumSequencer implements IBusListener {
 
         // Set instrument if needed
         if (player.getInstrument() == null && player.getInstrumentId() != null) {
-            player.setInstrument(InstrumentManager.getInstance().getInstrumentById(player.getInstrumentId()));
+            player.setInstrument(PlaybackService.getInstance().getInstrument(player.getInstrumentId()));
             if (player.getInstrument() != null) {
                 player.getInstrument().setChannel(SequencerConstants.MIDI_DRUM_CHANNEL);
                 player.getInstrument().setReceivedChannels(new Integer[]{SequencerConstants.MIDI_DRUM_CHANNEL});
@@ -1382,7 +1372,7 @@ public class DrumSequencer implements IBusListener {
             case Commands.TIMING_UPDATE -> handleTimingUpdate(cmd);
             case Commands.UPDATE_TEMPO -> handleTempoUpdate(cmd);
             case Commands.REPAIR_MIDI_CONNECTIONS ->
-                    DrumSequencerManager.getInstance().repairSequencerConnections(this);
+                    SequencerService.getInstance().repairMidiConnections();
             case Commands.TRANSPORT_START -> start();
             case Commands.TRANSPORT_STOP -> reset();
         }
@@ -1486,19 +1476,17 @@ public class DrumSequencer implements IBusListener {
     }
 
     /**
-     * Ensure all drum players have valid device connections Now delegates to
-     * DrumSequencerManager
+     * Ensure all drum players have valid device connections
      */
     public void ensureDeviceConnections() {
-        DrumSequencerManager.getInstance().repairSequencerConnections(this);
+        SequencerService.getInstance().repairMidiConnections();
     }
 
     /**
-     * Attempts to repair MIDI connections if they have been lost Now delegates
-     * to DrumSequencerManager
+     * Attempts to repair MIDI connections if they have been lost
      */
     public void repairMidiConnections() {
-        DrumSequencerManager.getInstance().repairSequencerConnections(this);
+        SequencerService.getInstance().repairMidiConnections();
     }
 
     // Add a method to update root notes
@@ -1518,10 +1506,7 @@ public class DrumSequencer implements IBusListener {
                 player.setRootNote(rootNote);
 
                 // Update player name if possible
-                String drumName = InternalSynthManager.getInstance().getDrumName(rootNote);
-                if (drumName != null && !drumName.isEmpty()) {
-                    player.setName(drumName);
-                }
+                // Note: Drum name lookup can be implemented in MidiService if needed
             }
         }
 
@@ -1540,7 +1525,7 @@ public class DrumSequencer implements IBusListener {
         }
 
         Player player = players[index];
-        Player refreshedPlayer = PlayerManager.getInstance().getPlayerById(player.getId());
+        Player refreshedPlayer = PlaybackService.getInstance().getPlayer(player.getId());
 
         if (refreshedPlayer != null) {
             // Update our player reference with refreshed data
@@ -1589,7 +1574,7 @@ public class DrumSequencer implements IBusListener {
 
     public void ensurePlayerHasInstrument(int i) {
         if (players != null && players.length > i && players[i].getInstrument() == null) {
-            PlayerManager.getInstance().initializeInternalInstrument(players[i], true, players[i].getId().intValue());
+            PlaybackService.getInstance().initializeInternalInstrument(players[i], true, players[i].getId().intValue());
         }
 
     }

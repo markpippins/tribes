@@ -203,3 +203,9 @@ java/swing/beatsui/target/checkstyle-result.xml
 java/target/checkstyle-cachefile
 java/target/checkstyle-checker.xml
 java/target/checkstyle-result.xml
+java/core/target/test-classes/com/angrysurfer/core/HeadlessStartupTest.java.bak
+web/alpha/package-lock.json
+web/beta/package-lock.json
+.gitignore
+web/alpha/package-lock.json
+java/core/target/test-classes/com/angrysurfer/core/HeadlessStartupTest.java.bak

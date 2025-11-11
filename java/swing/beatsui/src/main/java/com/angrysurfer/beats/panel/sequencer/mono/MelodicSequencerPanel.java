@@ -1,12 +1,34 @@
 package com.angrysurfer.beats.panel.sequencer.mono;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.util.function.Consumer;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.Symbols;
 import com.angrysurfer.beats.panel.player.SoundParametersPanel;
 import com.angrysurfer.beats.panel.sequencer.MuteSequencerPanel;
 import com.angrysurfer.beats.panel.sequencer.TiltSequencerPanel;
 import com.angrysurfer.beats.panel.session.SessionControlPanel;
 import com.angrysurfer.beats.util.UIHelper;
-import com.angrysurfer.core.api.*;
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
 import com.angrysurfer.core.event.MelodicScaleSelectionEvent;
 import com.angrysurfer.core.event.MelodicSequencerEvent;
 import com.angrysurfer.core.event.NoteEvent;
@@ -15,16 +37,11 @@ import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.MelodicSequenceData;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.TimingDivision;
-import com.angrysurfer.core.service.MelodicSequencerManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.SequencerService;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.function.Consumer;
 
 @Getter
 @Setter
@@ -72,7 +89,7 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
         super(new BorderLayout());
 
         // Create the sequencer with properly assigned channel
-        sequencer = MelodicSequencerManager.getInstance().newSequencer(index);
+        sequencer = SequencerService.getInstance().newSequencer(index);
 
         // Set up the note event listener
         sequencer.setNoteEventListener(noteEventConsumer);
@@ -81,7 +98,7 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
         sequencer.setStepUpdateListener(event -> updateStepHighlighting(event.getOldStep(), event.getNewStep()));
 
         // Apply instrument preset immediately to ensure correct sound
-        PlayerManager.getInstance().applyInstrumentPreset(sequencer.getPlayer());
+        PlaybackService.getInstance().applyPreset(sequencer.getPlayer());
 
         // Initialize the UI
         initialize();
@@ -118,8 +135,8 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
 
         try {
             // Check if this sequencer has any sequences
-            if (MelodicSequencerManager.getInstance().hasSequences(sequencer.getId())) {
-                Long firstId = MelodicSequencerManager.getInstance().getFirstSequenceId(sequencer.getId());
+            if (SequencerService.getInstance().hasSequences(sequencer.getId())) {
+                Long firstId = SequencerService.getInstance().getFirstSequenceId(sequencer.getId());
 
                 if (firstId != null) {
                     MelodicSequenceData data = RedisService.getInstance().findMelodicSequenceById(firstId,
@@ -335,19 +352,19 @@ public class MelodicSequencerPanel extends JPanel implements IBusListener {
 
         refreshButton.addActionListener(e -> {
             // First melodic sequencers
-            for (MelodicSequencer seq : MelodicSequencerManager
-                    .getInstance().getAllSequencers()) {
+            for (MelodicSequencer seq : SequencerService
+                    .getInstance().getAllMelodicSequencers()) {
                 if (seq.getPlayer() != null && seq.getPlayer().getInstrument() != null) {
-                    com.angrysurfer.core.service.PlayerManager.getInstance().applyInstrumentPreset(seq.getPlayer());
+                    com.angrysurfer.core.service.PlaybackService.getInstance().applyPreset(seq.getPlayer());
                 }
             }
 
             // Then drum sequencers
-            for (com.angrysurfer.core.sequencer.DrumSequencer seq : com.angrysurfer.core.service.DrumSequencerManager
-                    .getInstance().getAllSequencers()) {
+            for (com.angrysurfer.core.sequencer.DrumSequencer seq : SequencerService
+                    .getInstance().getAllDrumSequencers()) {
                 for (com.angrysurfer.core.model.Player player : seq.getPlayers()) {
                     if (player != null && player.getInstrument() != null) {
-                        com.angrysurfer.core.service.PlayerManager.getInstance().applyInstrumentPreset(player);
+                        com.angrysurfer.core.service.PlaybackService.getInstance().applyPreset(player);
                     }
                 }
                 seq.ensureDeviceConnections();

@@ -10,7 +10,7 @@ import com.angrysurfer.core.sequencer.Direction;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingUpdate;
-import com.angrysurfer.core.service.DrumSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -426,7 +426,7 @@ public class DrumSequencerGridButtonsPanel extends JPanel implements IBusListene
             }
 
             // Update the drum row's appearance
-            updateRowAppearance(drumIndex, drumIndex == DrumSequencerManager.getInstance().getSelectedPadIndex());
+            updateRowAppearance(drumIndex, drumIndex == SequencerService.getInstance().getSelectedPadIndex());
         }
 
         // Update parameter visualizations for all buttons

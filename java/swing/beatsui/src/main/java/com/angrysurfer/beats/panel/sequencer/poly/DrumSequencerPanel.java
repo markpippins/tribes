@@ -1,5 +1,32 @@
 package com.angrysurfer.beats.panel.sequencer.poly;
 
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.LayoutManager;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.panel.MainPanel;
 import com.angrysurfer.beats.panel.player.SoundParametersPanel;
 import com.angrysurfer.beats.panel.sequencer.MuteSequencerPanel;
@@ -9,7 +36,12 @@ import com.angrysurfer.beats.widget.AccentButton;
 import com.angrysurfer.beats.widget.Dial;
 import com.angrysurfer.beats.widget.DrumSequencerGridPanelContextHandler;
 import com.angrysurfer.beats.widget.TriggerButton;
-import com.angrysurfer.core.api.*;
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
+import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.event.DrumPadSelectionEvent;
 import com.angrysurfer.core.event.DrumStepParametersEvent;
 import com.angrysurfer.core.event.DrumStepUpdateEvent;
@@ -17,19 +49,10 @@ import com.angrysurfer.core.event.NoteEvent;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.TimingUpdate;
-import com.angrysurfer.core.service.DrumSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Getter
 @Setter
@@ -81,13 +104,13 @@ public abstract class DrumSequencerPanel extends JPanel implements IBusListener 
     }
 
     private void setup() {
-        // Get the shared sequencer instance from DrumSequencerManager
-        sequencer = DrumSequencerManager.getInstance().getSequencer(0);
+        // Get the shared sequencer instance from SequencerService
+        sequencer = SequencerService.getInstance().getDrumSequencer(0);
 
         // If no sequencer exists yet, create one
         if (sequencer == null) {
             logger.info("Creating new drum sequencer through manager");
-            sequencer = DrumSequencerManager.getInstance().newSequencer(noteEventConsumer);
+            sequencer = SequencerService.getInstance().createDrumSequencer();
             // Double check we got a sequencer
             if (sequencer == null) {
                 throw new IllegalStateException("Failed to create sequencer");

@@ -1,7 +1,5 @@
 package com.angrysurfer.beats;
 
-import java.util.List;
-
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -16,8 +14,6 @@ import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.config.FrameState;
-import com.angrysurfer.core.model.InstrumentWrapper;
-import com.angrysurfer.core.redis.InstrumentHelper;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.service.MidiService;
 import com.angrysurfer.core.service.PlaybackService;
@@ -30,9 +26,7 @@ public class App implements IBusListener {
 
     private static final Logger logger = LoggerFactory.getLogger(App.class.getName());
 
-    private static final CommandBus commandBus = CommandBus.getInstance();
-
-    private static final boolean showSplash = true;
+    private static final boolean SHOW_SPLASH = true;
     private static SplashScreen splash;
     private Frame frame;
 
@@ -54,7 +48,7 @@ public class App implements IBusListener {
 
             // Show splash screen using SwingUtilities.invokeLater
             SwingUtilities.invokeLater(() -> {
-                splash.setVisible(showSplash);
+                splash.setVisible(SHOW_SPLASH);
                 splash.setStatus("Initializing application...");
 
                 // Only start initialization AFTER splash screen is visible
@@ -143,7 +137,7 @@ public class App implements IBusListener {
 
     private static void initializeServices() {
         try {
-            RedisService redisService = RedisService.getInstance();
+            RedisService.getInstance();
             logger.info("Redis service initialized");
             splash.completeTask("Connected to database");
 

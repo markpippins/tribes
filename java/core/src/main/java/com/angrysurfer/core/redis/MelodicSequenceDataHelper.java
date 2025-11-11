@@ -6,9 +6,9 @@ import com.angrysurfer.core.event.MelodicSequencerEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.*;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.SequencerService;
 import com.angrysurfer.core.util.MelodicSequenceDataDeserializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -201,7 +201,7 @@ public class MelodicSequenceDataHelper {
                             existingPlayer != null ? existingPlayer.getId() : "none");
 
                     // Try to find and use the player with the stored ID
-                    Player storedPlayer = PlayerManager.getInstance().getPlayerById(data.getPlayerId());
+                    Player storedPlayer = PlaybackService.getInstance().getPlayer(data.getPlayerId());
                     if (storedPlayer != null) {
                         logger.info("Found player with ID: {}, applying to sequencer", data.getPlayerId());
                         sequencer.setPlayer(storedPlayer); // Assuming there's a setPlayer method or similar
@@ -269,7 +269,7 @@ public class MelodicSequenceDataHelper {
                     if (settingsChanged) {
                         try {
                             logger.info("Applying instrument preset changes to MIDI device");
-                            PlayerManager.getInstance().applyInstrumentPreset(player);
+                            PlaybackService.getInstance().applyPreset(player);
 
                             // Verify the changes were applied
                             logger.info("Verified final settings: soundbank='{}', bank={}, preset={}",
@@ -327,7 +327,7 @@ public class MelodicSequenceDataHelper {
 
                 // If no instrument, try to get by ID
                 if (instrument == null && data.getInstrumentId() != null) {
-                    instrument = InstrumentManager.getInstance().getInstrumentById(data.getInstrumentId());
+                    instrument = PlaybackService.getInstance().getInstrument(data.getInstrumentId());
                     if (instrument != null) {
                         player.setInstrument(instrument);
                         player.setInstrumentId(instrument.getId());
@@ -352,7 +352,7 @@ public class MelodicSequenceDataHelper {
                     if (data.getDeviceName() != null) {
 
                         // Try to reconnect to saved device
-                        MidiDevice device = DeviceManager.getMidiDevice(data.getDeviceName());
+                        MidiDevice device = MidiService.getInstance().getDevice(data.getDeviceName());
                         if (device != null) {
                             try {
                                 if (!device.isOpen()) {
@@ -374,7 +374,7 @@ public class MelodicSequenceDataHelper {
                     }
 
                     // Apply the instrument settings
-                    PlayerManager.getInstance().applyInstrumentPreset(player);
+                    PlaybackService.getInstance().applyPreset(player);
 
                 }
             }
@@ -580,8 +580,7 @@ public class MelodicSequenceDataHelper {
             data.setSequencerId(sequencerId);
 
             // Try to get the player ID from the current sequencer
-            MelodicSequencer sequencer = com.angrysurfer.core.service.MelodicSequencerManager
-                    .getInstance().getSequencer(sequencerId);
+            MelodicSequencer sequencer = SequencerService.getInstance().getMelodicSequencer(sequencerId);
             if (sequencer != null && sequencer.getPlayer() != null) {
                 data.setPlayerId(sequencer.getPlayer().getId());
                 logger.info("Set player ID: {} on new melodic sequence", sequencer.getPlayer().getId());

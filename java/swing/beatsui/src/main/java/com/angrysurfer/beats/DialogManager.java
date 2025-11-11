@@ -42,8 +42,8 @@ import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.PlaybackService;
 import com.angrysurfer.core.service.SessionManager;
 import com.angrysurfer.core.util.UserConfigConverter;
 import com.angrysurfer.beats.panel.player.PlayerEditPanel;
@@ -159,12 +159,12 @@ public class DialogManager implements IBusListener {
     private void setNewPlayerInstrument(Player newPlayer) {
         try {
             // Get all instruments from the InstrumentManager
-            List<InstrumentWrapper> instruments = com.angrysurfer.core.service.InstrumentManager.getInstance()
+            List<InstrumentWrapper> instruments = com.angrysurfer.core.service.PlaybackService.getInstance()
                     .getCachedInstruments();
 
             // Get list of available device names
-            List<String> availableDeviceNames = com.angrysurfer.core.service.DeviceManager.getInstance()
-                    .getAvailableOutputDeviceNames();
+            List<String> availableDeviceNames = com.angrysurfer.core.service.MidiService.getInstance()
+                    .getOutputDeviceNames();
 
             logger.info("Setting instrument for new player. Available devices: {}", availableDeviceNames);
 
@@ -244,14 +244,14 @@ public class DialogManager implements IBusListener {
                         Player updatedPlayer = panel.getUpdatedPlayer();
 
                         // Save and apply the changes
-                        PlayerManager.getInstance().savePlayerProperties(updatedPlayer);
+                        PlaybackService.getInstance().savePlayer(updatedPlayer);
 
                         // If this was a drum player in a sequencer whose instrument changed,
                         // other drum players may have been updated too
                         if (Objects.equals(updatedPlayer.getChannel(), SequencerConstants.MIDI_DRUM_CHANNEL) && updatedPlayer.getOwner() instanceof DrumSequencer sequencer) {
                             for (Player drumPlayer : sequencer.getPlayers()) {
                                 if (drumPlayer != null && !drumPlayer.equals(updatedPlayer)) {
-                                    PlayerManager.getInstance().savePlayerProperties(drumPlayer);
+                                    PlaybackService.getInstance().savePlayer(drumPlayer);
                                     CommandBus.getInstance().publish(Commands.PLAYER_UPDATE_EVENT, this,
                                             new PlayerUpdateEvent(this, drumPlayer));
                                 }
@@ -676,8 +676,8 @@ public class DialogManager implements IBusListener {
                     if (player.getInstrument() == null) {
                         // Try to get instrument from ID
                         if (player.getInstrumentId() != null) {
-                            InstrumentWrapper instrument = InstrumentManager.getInstance()
-                                    .getInstrumentById(player.getInstrumentId());
+                            InstrumentWrapper instrument = PlaybackService.getInstance()
+                                    .getInstrument(player.getInstrumentId());
                             if (instrument != null) {
                                 player.setInstrument(instrument);
                             }
@@ -686,7 +686,7 @@ public class DialogManager implements IBusListener {
                         // If still null, create a default one
                         if (player.getInstrument() == null) {
                             player.setInstrument(
-                                    InstrumentManager.getInstance().getOrCreateInternalSynthInstrument(9, true, i + 1));
+                                    PlaybackService.getInstance().getOrCreateInternalSynthInstrument(9, true, i + 1));
                         }
                     }
 
@@ -719,7 +719,7 @@ public class DialogManager implements IBusListener {
                     // Save all player settings
                     for (Player player : updatedSequencer.getPlayers()) {
                         if (player != null) {
-                            PlayerManager.getInstance().savePlayerProperties(player);
+                            PlaybackService.getInstance().savePlayer(player);
                         }
                     }
 

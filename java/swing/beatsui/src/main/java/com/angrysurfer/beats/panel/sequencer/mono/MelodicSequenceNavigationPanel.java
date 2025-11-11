@@ -12,8 +12,8 @@ import com.angrysurfer.core.sequencer.Direction;
 import com.angrysurfer.core.sequencer.MelodicSequenceData;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.TimingDivision;
-import com.angrysurfer.core.service.MelodicSequencerManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SequencerService;
+import com.angrysurfer.core.service.PlaybackService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -138,16 +138,16 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
         }
 
         long currentId = sequencer.getSequenceData().getId();
-        boolean hasSequences = MelodicSequencerManager.getInstance().hasSequences(sequencer.getId());
+        boolean hasSequences = SequencerService.getInstance().hasSequences(sequencer.getId());
 
         // Get first/last sequence IDs
-        Long firstId = MelodicSequencerManager.getInstance().getFirstSequenceId(sequencer.getId());
-        Long lastId = MelodicSequencerManager.getInstance().getLastSequenceId(sequencer.getId());
+        Long firstId = SequencerService.getInstance().getFirstSequenceId(sequencer.getId());
+        Long lastId = SequencerService.getInstance().getLastSequenceId(sequencer.getId());
 
         // Directly check if previous/next sequence exists
-        Long prevId = MelodicSequencerManager.getInstance().getPreviousSequenceId(
+        Long prevId = SequencerService.getInstance().getPreviousSequenceId(
                 sequencer.getId(), currentId);
-        Long nextId = MelodicSequencerManager.getInstance().getNextSequenceId(
+        Long nextId = SequencerService.getInstance().getNextSequenceId(
                 sequencer.getId(), currentId);
 
         // Enable/disable buttons based on direct availability
@@ -171,7 +171,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
 
         try {
             // Get all sequence IDs for this sequencer
-            List<Long> allIds = MelodicSequencerManager.getInstance()
+            List<Long> allIds = SequencerService.getInstance()
                     .getAllMelodicSequenceIds(sequencer.getId());
 
             if (allIds == null || allIds.isEmpty()) {
@@ -260,9 +260,9 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
         if (sequenceId != null && sequencer.getId() != null) {
             // Replace direct RedisService call with manager call
 
-            MelodicSequenceData data = MelodicSequencerManager.getInstance().getSequenceData(sequencer.getId(), sequenceId);
+            MelodicSequenceData data = SequencerService.getInstance().getSequenceData(sequencer.getId(), sequenceId);
 
-//            boolean success = MelodicSequencerManager.getInstance()
+//            boolean success = SequencerService.getInstance()
 //                    .applySequenceById(sequencer.getId(), sequenceId);
 
             if (Objects.isNull(data)) {
@@ -278,7 +278,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
 
             // Reset the sequencer to ensure proper step indicator state
             //sequencer.reset();
-            PlayerManager.getInstance().initializePlayer(sequencer.getPlayer());
+            PlaybackService.getInstance().initializePlayer(sequencer.getPlayer());
 
             // Notify that a pattern was loaded
             CommandBus.getInstance().publish(
@@ -302,7 +302,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
         }
 
         try {
-            Long firstId = MelodicSequencerManager.getInstance().getFirstSequenceId(sequencer.getId());
+            Long firstId = SequencerService.getInstance().getFirstSequenceId(sequencer.getId());
             if (firstId != null) {
                 logger.info("Loading first sequence ID: {}", firstId);
                 loadSequence(firstId);
@@ -321,7 +321,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
             return;
         }
 
-        Long prevId = MelodicSequencerManager.getInstance().getPreviousSequenceId(
+        Long prevId = SequencerService.getInstance().getPreviousSequenceId(
                 sequencer.getId(),
                 sequencer.getSequenceData().getId());
 
@@ -336,7 +336,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
             return;
         }
 
-        Long nextId = MelodicSequencerManager.getInstance().getNextSequenceId(
+        Long nextId = SequencerService.getInstance().getNextSequenceId(
                 sequencer.getId(),
                 sequencer.getSequenceData().getId());
 
@@ -351,7 +351,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
             return;
         }
 
-        Long lastId = MelodicSequencerManager.getInstance().getLastSequenceId(sequencer.getId());
+        Long lastId = SequencerService.getInstance().getLastSequenceId(sequencer.getId());
         if (lastId != null) {
             loadSequence(lastId);
         }
@@ -362,7 +362,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
             logger.debug("Saving current sequence for sequencer {}", sequencer.getId());
 
             // Save the sequence
-            Long savedId = MelodicSequencerManager.getInstance().saveSequence(sequencer);
+            Long savedId = SequencerService.getInstance().saveSequence(sequencer);
 
             if (savedId != null) {
                 logger.info("Successfully saved sequence with ID: {}", savedId);
@@ -477,7 +477,7 @@ public class MelodicSequenceNavigationPanel extends LivePanel {
                     updateButtonStates();
 
                     // If all sequences deleted, create a new one
-                    if (!MelodicSequencerManager.getInstance().hasSequences(sequencer.getId())) {
+                    if (!SequencerService.getInstance().hasSequences(sequencer.getId())) {
                         createAndSaveNewSequence();
                     }
                     break;

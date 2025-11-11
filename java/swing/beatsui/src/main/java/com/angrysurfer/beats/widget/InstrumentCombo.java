@@ -1,5 +1,18 @@
 package com.angrysurfer.beats.widget;
 
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.util.List;
+
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JComboBox;
+import javax.swing.JList;
+import javax.swing.SwingUtilities;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.util.UIHelper;
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
@@ -9,15 +22,10 @@ import com.angrysurfer.core.event.PlayerInstrumentChangeEvent;
 import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
-import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.redis.RedisService;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.List;
 
 /**
  * Refactored InstrumentCombo with better manager integration
@@ -271,7 +279,7 @@ public class InstrumentCombo extends JComboBox<InstrumentWrapper> implements IBu
      */
     private List<InstrumentWrapper> getAllInstrumentWrappers(Integer playerChannel) {
         List<InstrumentWrapper> allInstruments =
-                InstrumentManager.getInstance().getCachedInstruments();
+                RedisService.getInstance().getInstrumentHelper().findAllInstruments();
 
         // Sort instruments with enhanced alphanumeric sorting
         allInstruments.sort((a, b) -> {

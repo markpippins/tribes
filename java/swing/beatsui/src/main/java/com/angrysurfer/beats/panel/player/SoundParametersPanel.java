@@ -12,8 +12,8 @@ import com.angrysurfer.core.model.preset.BankItem;
 import com.angrysurfer.core.model.preset.PresetItem;
 import com.angrysurfer.core.model.preset.SoundbankItem;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InternalSynthManager;
-import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.SoundbankService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,7 +172,7 @@ public class SoundParametersPanel extends LivePanel {
                         currentPlayer.setRootNote(item.getNumber());
                     }
 
-                    boolean success = SoundbankManager.getInstance().updatePlayerSound(
+                    boolean success = SoundbankService.getInstance().updatePlayerSound(
                             currentPlayer, soundbankName, bankIndex, item.getNumber());
 
                     publishPresetChange(currentPlayer, soundbankName, bankIndex, item.getNumber());
@@ -271,7 +271,7 @@ public class SoundParametersPanel extends LivePanel {
             currentPlayer.getInstrument().setSoundbankName(soundbankName);
 
             // IMPORTANT: Actively apply the soundbank using SoundbankManager
-            boolean applied = SoundbankManager.getInstance().applySoundbank(
+            boolean applied = SoundbankService.getInstance().applySoundbank(
                     currentPlayer.getInstrument(), soundbankName);
 
             logger.info("Applied soundbank {} to instrument: {}",
@@ -345,7 +345,7 @@ public class SoundParametersPanel extends LivePanel {
 
             boolean isDrumChannel = player.getChannel() == SequencerConstants.MIDI_DRUM_CHANNEL;
             boolean isInternalSynth = player.getInstrument() != null &&
-                    InternalSynthManager.getInstance().isInternalSynthInstrument(player.getInstrument());
+                    MidiService.getInstance().isInternalSynthInstrument(player.getInstrument());
 
             // Update UI according to instrument type
             updateControlVisibility(isInternalSynth, isDrumChannel);
@@ -427,7 +427,7 @@ public class SoundParametersPanel extends LivePanel {
             soundbankCombo.removeAllItems();
 
             // Use new helper method
-            List<SoundbankItem> soundbanks = SoundbankManager.getInstance().getPlayerSoundbanks(player);
+            List<SoundbankItem> soundbanks = SoundbankService.getInstance().getPlayerSoundbanks(player);
             for (SoundbankItem item : soundbanks) {
                 soundbankCombo.addItem(item);
             }
@@ -465,7 +465,7 @@ public class SoundParametersPanel extends LivePanel {
                 return;
 
             // Use new helper method
-            List<BankItem> banks = SoundbankManager.getInstance().getPlayerBanks(player, soundbankItem.getName());
+            List<BankItem> banks = SoundbankService.getInstance().getPlayerBanks(player, soundbankItem.getName());
             for (BankItem item : banks) {
                 bankCombo.addItem(item);
             }
@@ -515,7 +515,7 @@ public class SoundParametersPanel extends LivePanel {
             }
 
             // Use new helper method
-            List<PresetItem> presets = SoundbankManager.getInstance().getPlayerPresets(
+            List<PresetItem> presets = SoundbankService.getInstance().getPlayerPresets(
                     player, soundbankName, bankIndex);
 
             // Sort alphabetically by name
@@ -558,7 +558,7 @@ public class SoundParametersPanel extends LivePanel {
             bankPanel.setEnabled(false);
 
             // Use new helper method
-            List<PresetItem> drumPresets = SoundbankManager.getInstance().getDrumPresets();
+            List<PresetItem> drumPresets = SoundbankService.getInstance().getDrumPresets();
 
             // Sort alphabetically by name
             drumPresets.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));

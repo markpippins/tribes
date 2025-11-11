@@ -115,7 +115,7 @@ public class DrumSelectorPanel extends JPanel implements IBusListener {
 
                             // Make sure each drum has the right sound name from InternalSynthManager
                             if (player.getRootNote() != null) {
-                                String drumName = com.angrysurfer.core.service.InternalSynthManager.getInstance()
+                                String drumName = com.angrysurfer.core.service.MidiService.getInstance()
                                         .getDrumName(player.getRootNote());
                                 player.setName(drumName);
                                 logger.debug("Set player {} name to: {}", i, drumName);

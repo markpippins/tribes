@@ -23,9 +23,8 @@ import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.sequencer.Scale;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingUpdate;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
 import com.angrysurfer.core.util.MidiClockSource;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -450,13 +449,7 @@ public class Session implements Serializable, IBusListener {
      */
     public void initializeDevices() {
         // Get available devices once to avoid repeated queries
-        List<MidiDevice> availableDevices;
-        try {
-            availableDevices = DeviceManager.getInstance().getAvailableOutputDevices();
-        } catch (MidiUnavailableException e) {
-            logger.error("Failed to get available devices: {}", e.getMessage());
-            return;
-        }
+        List<MidiDevice> availableDevices = MidiService.getInstance().getOutputDevices();
 
         // Make a defensive copy of players to avoid concurrent modification
         Set<Player> playersCopy = new HashSet<>(players);
@@ -529,9 +522,9 @@ public class Session implements Serializable, IBusListener {
                 }
             }
 
-            // If still no device, get from DeviceManager
+            // If still no device, get from MidiService
             if (device == null) {
-                device = DeviceManager.getMidiDevice(deviceName);
+                device = MidiService.getInstance().getDevice(deviceName);
             }
 
             // Connect and open device if found
@@ -572,8 +565,8 @@ public class Session implements Serializable, IBusListener {
             logger.warn("Player {} has null instrument, attempting to assign default", player.getId());
             try {
                 // Try to find or create an internal instrument
-                InstrumentWrapper defaultInstrument = InstrumentManager.getInstance()
-                        .findOrCreateInternalInstrument(player.getChannel());
+                InstrumentWrapper defaultInstrument = PlaybackService.getInstance()
+                        .getOrCreateInternalInstrument(player.getChannel(), true, player.getId().intValue());
 
                 if (defaultInstrument != null) {
                     // Assign default instrument
@@ -584,7 +577,7 @@ public class Session implements Serializable, IBusListener {
 
 
                     // Save the player to persist this change
-                    PlayerManager.getInstance().savePlayerProperties(player);
+                    PlaybackService.getInstance().savePlayer(player);
 
                     logger.info("Assigned default internal instrument to player {}", player.getId());
                 } else {
@@ -850,7 +843,7 @@ public class Session implements Serializable, IBusListener {
 
         // Also store the player's instrument if it exists and is not default
         if (player.getInstrument() != null && !Boolean.TRUE.equals(player.getInstrument().getIsDefault())) {
-            InstrumentManager.getInstance().updateInstrument(player.getInstrument());
+            PlaybackService.getInstance().saveInstrument(player.getInstrument());
         }
 
         // Flag session as modified

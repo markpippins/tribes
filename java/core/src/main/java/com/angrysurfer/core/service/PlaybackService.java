@@ -1,21 +1,25 @@
 package com.angrysurfer.core.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.api.IBusListener;
-import com.angrysurfer.core.event.*;
+import com.angrysurfer.core.event.PlayerInstrumentChangeEvent;
+import com.angrysurfer.core.event.PlayerPresetChangeEvent;
+import com.angrysurfer.core.event.PlayerRefreshEvent;
+import com.angrysurfer.core.event.PlayerRuleUpdateEvent;
+import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Rule;
-import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Unified playback service - manages players and instruments.
@@ -308,5 +312,79 @@ public class PlaybackService implements IBusListener {
         } catch (Exception e) {
             logger.error("Failed to initialize internal instrument", e);
         }
+    }
+
+    public void removeInstrument(Long id) {
+        if (id == null) return;
+        
+        try {
+            InstrumentWrapper instrument = instruments.remove(id);
+            if (instrument != null) {
+                redisService.deleteInstrument(instrument);
+                logger.info("Removed instrument: {}", id);
+            }
+        } catch (Exception e) {
+            logger.error("Error removing instrument", e);
+        }
+    }
+
+    public void updateInstrument(InstrumentWrapper instrument) {
+        saveInstrument(instrument);
+    }
+
+    public void refreshCache(java.util.List<InstrumentWrapper> instrumentList) {
+        if (instrumentList == null) return;
+        
+        instruments.clear();
+        for (InstrumentWrapper instrument : instrumentList) {
+            if (instrument != null && instrument.getId() != null) {
+                instruments.put(instrument.getId(), instrument);
+            }
+        }
+        logger.debug("Refreshed instrument cache with {} instruments", instruments.size());
+    }
+
+    public InstrumentWrapper getInstrumentFromCache(Long id) {
+        return instruments.get(id);
+    }
+
+    public java.util.List<InstrumentWrapper> getCachedInstruments() {
+        return new java.util.ArrayList<>(instruments.values());
+    }
+
+    public InstrumentWrapper getOrCreateInternalSynthInstrument(int channel, boolean exclusive, int tag) {
+        return getOrCreateInternalInstrument(channel, exclusive, tag);
+    }
+
+    public com.angrysurfer.core.redis.InstrumentHelper getInstrumentHelper() {
+        return redisService.getInstrumentHelper();
+    }
+
+    public java.util.List<InstrumentWrapper> getDefaultDrumKit() {
+        // Return a list of default drum instruments
+        java.util.List<InstrumentWrapper> drumKit = new java.util.ArrayList<>();
+        for (int i = 0; i < 16; i++) {
+            InstrumentWrapper drum = getOrCreateInternalInstrument(
+                com.angrysurfer.core.sequencer.SequencerConstants.MIDI_DRUM_CHANNEL, 
+                false, 
+                i
+            );
+            if (drum != null) {
+                drumKit.add(drum);
+            }
+        }
+        return drumKit;
+    }
+
+    public java.util.List<InstrumentWrapper> getDrumInstruments() {
+        // Return all instruments on drum channel
+        return redisService.getInstrumentHelper().findAllInstruments().stream()
+            .filter(inst -> inst.getChannel() != null && 
+                   inst.getChannel() == com.angrysurfer.core.sequencer.SequencerConstants.MIDI_DRUM_CHANNEL)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    public void applyPlayerInstrument(Player player) {
+        applyPreset(player);
     }
 }

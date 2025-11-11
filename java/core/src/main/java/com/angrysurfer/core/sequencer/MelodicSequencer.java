@@ -33,9 +33,9 @@ import com.angrysurfer.core.model.Note;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.MelodicSequencerManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.SequencerService;
 import com.angrysurfer.core.service.SessionManager;
 import com.angrysurfer.core.service.UserConfigManager;
 
@@ -85,17 +85,18 @@ public class MelodicSequencer implements IBusListener {
     }
 
     /**
-     * Perform side-effectful initialization that requires other managers/singletons
+     * Perform side-effectful initialization that requires other services/singletons
      * to be available. This should be called by the central startup sequence
-     * (for example from App) once SessionManager, PlayerManager, etc. have
-     * been initialized.
+     * (for example from App) once SessionManager, MidiService, and PlaybackService
+     * have been initialized.
      */
     public synchronized void initialize() {
         // Initialize the player and related resources.
         initializePlayer(SequencerConstants.MELODIC_CHANNELS[id]);
 
         // Initialize with default or first available sequence
-        MelodicSequencerManager.getInstance().initializeSequencer(this, null);
+        // Note: Sequencer initialization is now handled by SequencerService
+        // This method may need to be refactored or removed
 
         CommandBus.getInstance().register(this, new String[]{
                 Commands.REPAIR_MIDI_CONNECTIONS,
@@ -157,7 +158,7 @@ public class MelodicSequencer implements IBusListener {
             reset();
         }
 
-        PlayerManager.getInstance().initializePlayer(player);
+        PlaybackService.getInstance().initializePlayer(player);
 
         isPlaying = getSequenceData().isLooping();
         logger.info("Melodic sequencer {} started playback", id);
@@ -272,8 +273,10 @@ public class MelodicSequencer implements IBusListener {
         if (nextPatternId != null) {
             Long currentId = sequenceData.getId();
 
-            // Use the manager instead of Redis directly
-            if (MelodicSequencerManager.getInstance().applySequenceById(id, nextPatternId)) {
+            // Load the sequence directly
+            MelodicSequenceData nextData = SequencerService.getInstance().loadMelodicSequence(nextPatternId, id);
+            if (nextData != null) {
+                setSequenceData(nextData);
                 CommandBus.getInstance().publish(
                         Commands.MELODIC_PATTERN_SWITCHED,
                         this,
@@ -429,8 +432,7 @@ public class MelodicSequencer implements IBusListener {
         }
 
         if (player.getInstrument() != null) {
-            DeviceManager.getInstance();
-            MidiDevice device = DeviceManager.getMidiDevice(player.getInstrument().getDeviceName());
+            MidiDevice device = MidiService.getInstance().getDevice(player.getInstrument().getDeviceName());
             if (device != null) {
                 if (!device.isOpen()) {
                     try {
@@ -441,7 +443,7 @@ public class MelodicSequencer implements IBusListener {
                 }
                 player.getInstrument().setDevice(device);
                 player.getInstrument().setAssignedToPlayer(true);
-            } else PlayerManager.getInstance().initializeInternalInstrument(player, true, player.getId().intValue());
+            } else PlaybackService.getInstance().initializeInternalInstrument(player, true, player.getId().intValue());
         }
 
         if (sequenceData != null) {
@@ -449,7 +451,7 @@ public class MelodicSequencer implements IBusListener {
         }
 
         session.getPlayers().add(player);
-        PlayerManager.getInstance().savePlayerProperties(player);
+        PlaybackService.getInstance().savePlayer(player);
         SessionManager.getInstance().saveSession(session);
         logger.info("Added new player to session {}: {}", session.getId(), player.getId());
     }
@@ -474,7 +476,7 @@ public class MelodicSequencer implements IBusListener {
                 instrument.setPreset(sequenceData.getPreset());
             }
 
-            // PlayerManager.getInstance().applyInstrumentPreset(player);
+            // PlaybackService.getInstance().applyPreset(player);
             // initializePlayer(player);
         }
 
@@ -538,7 +540,7 @@ public class MelodicSequencer implements IBusListener {
             case Commands.ROOT_NOTE_SELECTED -> handleRootNoteSelected(action);
 
             case Commands.REPAIR_MIDI_CONNECTIONS -> {
-                MelodicSequencerManager.getInstance().repairMidiConnections(this);
+                SequencerService.getInstance().repairMidiConnections();
             }
 
             case Commands.SYSTEM_READY -> {
@@ -563,7 +565,7 @@ public class MelodicSequencer implements IBusListener {
             case Commands.REFRESH_ALL_INSTRUMENTS, Commands.PLAYER_PRESET_CHANGE_EVENT,
                  Commands.PLAYER_PRESET_CHANGED, Commands.PLAYER_INSTRUMENT_CHANGE_EVENT,
                  Commands.REFRESH_PLAYER_INSTRUMENT -> {
-                PlayerManager.getInstance().initializePlayer(player);
+                PlaybackService.getInstance().initializePlayer(player);
                 MelodicSequenceModifier.updateInstrumentSettingsInSequenceData(this);
             }
 

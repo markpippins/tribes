@@ -1,9 +1,9 @@
 package com.angrysurfer.beats;
 
 import com.angrysurfer.beats.diagnostic.DiagnosticLogBuilder;
-import com.angrysurfer.beats.diagnostic.DiagnosticsManager;
+// import com.angrysurfer.beats.diagnostic.DiagnosticsManager;
 import com.angrysurfer.beats.diagnostic.DiagnosticsSplashScreen;
-import com.angrysurfer.beats.diagnostic.suite.RedisServiceDiagnostics;
+// import com.angrysurfer.beats.diagnostic.suite.RedisServiceDiagnostics;
 import com.angrysurfer.beats.visualization.IVisualizationHandler;
 import com.angrysurfer.beats.visualization.VisualizationCategory;
 import com.angrysurfer.core.api.Command;
@@ -130,7 +130,9 @@ public class MenuBar extends JMenuBar implements IBusListener {
         // Add Theme menu
         optionsMenu.add(themeManager.createThemeMenu());
 
-        // Add 000000000000s menu
+        // TEMPORARILY DISABLED - Diagnostics menu (needs refactoring)
+        /*
+        // Add Diagnostics menu
         JMenu diagnosticsMenu = new JMenu("Diagnostics");
         diagnosticsMenu.setMnemonic(KeyEvent.VK_D);
 
@@ -556,7 +558,8 @@ public class MenuBar extends JMenuBar implements IBusListener {
         diagnosticsMenu.add(repairMidiItem);
 
         // Add the diagnostics menu to the menu bar
-        optionsMenu.add(diagnosticsMenu);
+        // optionsMenu.add(diagnosticsMenu);
+        */
 
         // Register visualization listener
         CommandBus.getInstance().register(this, new String[]{

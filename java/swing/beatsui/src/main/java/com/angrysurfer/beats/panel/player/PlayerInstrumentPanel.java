@@ -7,9 +7,9 @@ import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.PlaybackService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,7 @@ public class PlayerInstrumentPanel extends JPanel {
 
         // Device selection
         deviceCombo = new JComboBox<>();
-        for (String device : DeviceManager.getInstance().getAvailableOutputDeviceNames()) {
+        for (String device : MidiService.getInstance().getOutputDeviceNames()) {
             deviceCombo.addItem(device);
         }
 
@@ -265,7 +265,7 @@ public class PlayerInstrumentPanel extends JPanel {
             RedisService.getInstance().saveInstrument(newInstrument);
 
             // Register with InstrumentManager
-            InstrumentManager.getInstance().updateInstrument(newInstrument);
+            PlaybackService.getInstance().updateInstrument(newInstrument);
 
             // If we have a player, assign the instrument to it
             if (player != null) {
@@ -274,10 +274,10 @@ public class PlayerInstrumentPanel extends JPanel {
                 player.setInstrumentId(newInstrument.getId());
 
                 // Save player changes
-                PlayerManager.getInstance().savePlayerProperties(player);
+                PlaybackService.getInstance().savePlayer(player);
 
                 // Apply instrument settings
-                PlayerManager.getInstance().applyPlayerInstrument(player);
+                PlaybackService.getInstance().applyPlayerInstrument(player);
 
                 // Notify about player update
                 CommandBus.getInstance().publish(Commands.PLAYER_UPDATE_EVENT, this, new PlayerUpdateEvent(this, player));

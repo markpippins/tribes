@@ -204,4 +204,120 @@ public class SoundbankService {
         }
         return false;
     }
+
+    public List<Integer> getAvailableBanksByName(String soundbankName) {
+        return getAvailableBanks(soundbankName);
+    }
+
+    public boolean updatePlayerSound(com.angrysurfer.core.model.Player player, String soundbankName, Integer bankIndex, Integer presetNumber) {
+        if (player == null || player.getInstrument() == null) return false;
+        
+        com.angrysurfer.core.model.InstrumentWrapper instrument = player.getInstrument();
+        if (soundbankName != null) {
+            applySoundbank(instrument, soundbankName);
+        }
+        if (bankIndex != null) {
+            instrument.setBankIndex(bankIndex);
+        }
+        if (presetNumber != null) {
+            instrument.setPreset(presetNumber);
+        }
+        
+        return PlaybackService.getInstance().applyPreset(player);
+    }
+
+    public void playPreviewNote(com.angrysurfer.core.model.Player player, int durationMs) {
+        if (player == null || player.getInstrument() == null) return;
+        
+        int note = player.getRootNote() != null ? player.getRootNote() : 60;
+        int velocity = 100;
+        int channel = player.getChannel();
+        
+        MidiService.getInstance().playNote(note, velocity, durationMs, channel);
+    }
+
+    public void updateInstrumentUIComponents(com.angrysurfer.core.model.InstrumentWrapper instrument,
+                                            javax.swing.JComboBox<String> soundbankCombo,
+                                            javax.swing.JComboBox<Integer> bankCombo,
+                                            javax.swing.JComboBox<com.angrysurfer.core.model.preset.PresetItem> presetCombo) {
+        // Placeholder - UI components should be updated by the UI code
+        logger.debug("UI component update requested for instrument: {}", instrument != null ? instrument.getName() : "null");
+    }
+
+    public java.util.List<com.angrysurfer.core.model.preset.SoundbankItem> getPlayerSoundbanks(com.angrysurfer.core.model.Player player) {
+        java.util.List<com.angrysurfer.core.model.preset.SoundbankItem> items = new java.util.ArrayList<>();
+        for (String name : getSoundbankNames()) {
+            items.add(new com.angrysurfer.core.model.preset.SoundbankItem(name));
+        }
+        return items;
+    }
+
+    public java.util.List<com.angrysurfer.core.model.preset.BankItem> getPlayerBanks(com.angrysurfer.core.model.Player player, String soundbankName) {
+        java.util.List<com.angrysurfer.core.model.preset.BankItem> items = new java.util.ArrayList<>();
+        for (Integer bank : getAvailableBanks(soundbankName)) {
+            items.add(new com.angrysurfer.core.model.preset.BankItem(bank, "Bank " + bank));
+        }
+        return items;
+    }
+
+    public java.util.List<com.angrysurfer.core.model.preset.PresetItem> getPlayerPresets(com.angrysurfer.core.model.Player player, String soundbankName, Integer bankIndex) {
+        java.util.List<com.angrysurfer.core.model.preset.PresetItem> items = new java.util.ArrayList<>();
+        java.util.List<String> names = getPresetNames(soundbankName, bankIndex);
+        for (int i = 0; i < names.size(); i++) {
+            items.add(new com.angrysurfer.core.model.preset.PresetItem(i, names.get(i)));
+        }
+        return items;
+    }
+
+    public java.util.List<com.angrysurfer.core.model.preset.PresetItem> getDrumPresets() {
+        java.util.List<com.angrysurfer.core.model.preset.PresetItem> items = new java.util.ArrayList<>();
+        for (DrumItem drum : drumItems) {
+            items.add(new com.angrysurfer.core.model.preset.PresetItem(drum.getNoteNumber(), drum.getName()));
+        }
+        return items;
+    }
+
+    public List<String> getPresetNames(String soundbankName, Integer bankIndex) {
+        if (bankIndex == null) return Collections.emptyList();
+        return getPresetNames(soundbankName, bankIndex.intValue());
+    }
+
+    public String getPresetName(Long instrumentId, Long presetNumber) {
+        // Simplified - return preset number as string
+        return presetNumber != null ? "Preset " + presetNumber : "Unknown";
+    }
+
+    public Soundbank getSoundbank(String soundbankName) {
+        return soundbanks.get(soundbankName);
+    }
+
+    public String loadSoundbankFile(java.io.File file) {
+        if (file == null || !file.exists()) {
+            return null;
+        }
+
+        try {
+            Synthesizer synth = MidiService.getInstance().getSynthesizer();
+            if (synth == null) return null;
+
+            Soundbank soundbank = MidiSystem.getSoundbank(file);
+            if (soundbank != null) {
+                String name = file.getName().replace(".sf2", "").replace(".dls", "");
+                soundbanks.put(name, soundbank);
+                
+                // Extract available banks
+                Set<Integer> banks = new java.util.HashSet<>();
+                for (Instrument inst : soundbank.getInstruments()) {
+                    banks.add(inst.getPatch().getBank());
+                }
+                availableBanksMap.put(name, new ArrayList<>(banks));
+                
+                logger.info("Loaded soundbank: {} with {} instruments", name, soundbank.getInstruments().length);
+                return name;
+            }
+        } catch (Exception e) {
+            logger.error("Error loading soundbank file", e);
+        }
+        return null;
+    }
 }

@@ -7,8 +7,8 @@ import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.PatternSlot;
 import com.angrysurfer.core.sequencer.TimingUpdate;
-import com.angrysurfer.core.service.DrumSequencerManager;
-import com.angrysurfer.core.service.MelodicSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
+import com.angrysurfer.core.service.SequencerService;
 import com.angrysurfer.core.service.SessionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,11 +87,11 @@ public class SongPanel extends JPanel implements IBusListener {
 
     private void initializeSequencers() {
         // Get drum sequencer from manager
-        drumSequencer = DrumSequencerManager.getInstance().getSequencer(0);
+        drumSequencer = SequencerService.getInstance().getDrumSequencer(0);
 
         // Get melodic sequencers
-        for (int i = 0; i < MelodicSequencerManager.getInstance().getSequencerCount(); i++) {
-            MelodicSequencer sequencer = MelodicSequencerManager.getInstance().getSequencer(i);
+        for (int i = 0; i < SequencerService.getInstance().getSequencerCount(); i++) {
+            MelodicSequencer sequencer = SequencerService.getInstance().getMelodicSequencer(i);
             if (sequencer != null) {
                 melodicSequencers.add(sequencer);
                 // Initialize empty pattern slot list for this sequencer
@@ -252,14 +252,14 @@ public class SongPanel extends JPanel implements IBusListener {
         int selectedIndex = trackCombo.getSelectedIndex();
         if (selectedIndex == 0) {
             // Drum patterns
-            List<Long> patternIds = DrumSequencerManager.getInstance().getAllDrumSequenceIds();
+            List<Long> patternIds = SequencerService.getInstance().getAllDrumSequenceIds();
             for (Long id : patternIds) {
                 patternCombo.addItem("Drum Pattern " + id);
             }
         } else if (selectedIndex > 0 && selectedIndex <= melodicSequencers.size()) {
             // Melodic patterns
             MelodicSequencer sequencer = melodicSequencers.get(selectedIndex - 1);
-            List<Long> patternIds = MelodicSequencerManager.getInstance().getAllMelodicSequenceIds(sequencer.getId());
+            List<Long> patternIds = SequencerService.getInstance().getAllMelodicSequenceIds(sequencer.getId());
             for (Long id : patternIds) {
                 patternCombo.addItem("Pattern " + id);
             }

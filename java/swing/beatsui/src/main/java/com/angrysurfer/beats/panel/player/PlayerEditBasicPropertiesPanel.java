@@ -9,8 +9,8 @@ import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.preset.DrumItem;
 import com.angrysurfer.core.model.preset.PresetItem;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InternalSynthManager;
-import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.SoundbankService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +28,8 @@ public class PlayerEditBasicPropertiesPanel extends JPanel {
     private static final Logger logger = LoggerFactory.getLogger(PlayerEditBasicPropertiesPanel.class);
     private static final int PREVIEW_DURATION_MS = 500;
     // Service references
-    private final SoundbankManager soundbankManager = SoundbankManager.getInstance();
-    private final InternalSynthManager synthManager = InternalSynthManager.getInstance();
+    private final SoundbankService soundbankManager = SoundbankService.getInstance();
+    private final MidiService synthManager = MidiService.getInstance();
 
     // State tracking
     private final AtomicBoolean initializing = new AtomicBoolean(false);
@@ -481,7 +481,7 @@ public class PlayerEditBasicPropertiesPanel extends JPanel {
     private void onDrumChanged() {
         if (player != null && drumCombo.getSelectedItem() instanceof DrumItem drum) {
             player.setRootNote(drum.getNoteNumber());
-            player.setName(InternalSynthManager.getInstance().getDrumName(player.getRootNote()));
+            player.setName(MidiService.getInstance().getDrumName(player.getRootNote()));
             // Apply changes
             applyChanges();
         }

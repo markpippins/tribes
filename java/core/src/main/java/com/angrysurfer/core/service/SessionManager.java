@@ -1,7 +1,6 @@
 package com.angrysurfer.core.service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -79,11 +78,8 @@ public class SessionManager implements IBusListener {
         float tempoInBPM = activeSession.getTempoInBPM();
         int ticksPerBeat = activeSession.getTicksPerBeat();
 
-        // Update all drum sequencers
-        DrumSequencerManager.getInstance().updateTempoSettings(tempoInBPM, ticksPerBeat);
-
-        // Update all melodic sequencers
-        MelodicSequencerManager.getInstance().updateTempoSettings(tempoInBPM, ticksPerBeat);
+        // Update all sequencers using unified SequencerService
+        SequencerService.getInstance().updateTempo(tempoInBPM, ticksPerBeat);
 
         logger.info("Updated all sequencers with tempo: " + tempoInBPM + " BPM, " +
                 ticksPerBeat + " ticks per beat");
@@ -339,23 +335,15 @@ public class SessionManager implements IBusListener {
                 session = redisService.newSession();
             }
 
-            // Load all instruments using InstrumentManager
-            InstrumentManager instrumentManager = InstrumentManager.getInstance();
-            List<InstrumentWrapper> instruments = instrumentManager.getCachedInstruments();
-
-            // No need to manually update each instrument in InstrumentManager
-            // since getAllInstruments() should already have populated the cache
-
-            // Load all players using PlayerManager
-            PlayerManager playerManager = PlayerManager.getInstance();
+            // Load all players using PlaybackService
+            PlaybackService playbackService = PlaybackService.getInstance();
             Set<Player> players = SessionManager.getInstance().getActiveSession().getPlayers();
 
             // Link players to their instruments and add to session
             for (Player player : players) {
                 // Link player to its instrument if available
                 if (player.getInstrumentId() != null) {
-                    InstrumentWrapper instrument =
-                            instrumentManager.getInstrumentById(player.getInstrumentId());
+                    InstrumentWrapper instrument = playbackService.getInstrument(player.getInstrumentId());
                     if (instrument != null) {
                         player.setInstrument(instrument);
                     }
@@ -394,12 +382,12 @@ public class SessionManager implements IBusListener {
     private void processPlayerEdit(Player player) {
         logger.info("Processing player edit/add: " + player.getName());
 
-        // Use PlayerManager for consistent player saving
-        PlayerManager playerManager = PlayerManager.getInstance();
+        // Use PlaybackService for consistent player saving
+        PlaybackService playbackService = PlaybackService.getInstance();
 
         if (player.getId() == null && !player.getIsDefault()) {
-            // New player - save through PlayerManager
-            playerManager.savePlayerProperties(player);
+            // New player - save through PlaybackService
+            playbackService.savePlayer(player);
 
             // Add to session
             getActiveSession().getPlayers().add(player);
@@ -410,8 +398,8 @@ public class SessionManager implements IBusListener {
 
             logger.info("Added new player and updated session");
         } else {
-            // Existing player update - save through PlayerManager
-            playerManager.savePlayerProperties(player);
+            // Existing player update - save through PlaybackService
+            playbackService.savePlayer(player);
             logger.info("Updated existing player and session");
         }
 

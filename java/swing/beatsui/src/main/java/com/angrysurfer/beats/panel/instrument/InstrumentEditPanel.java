@@ -23,7 +23,7 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
 import com.angrysurfer.core.model.InstrumentWrapper;
-import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.service.PlaybackService;
 
 import lombok.Getter;
 
@@ -132,7 +132,7 @@ public class InstrumentEditPanel extends JPanel {
             return;
         }
         
-        String ownerInfo = InstrumentManager.getInstance().determineInstrumentOwner(instrument);
+        String ownerInfo = ""; // determineInstrumentOwner method removed
         
         if (ownerInfo == null || ownerInfo.isEmpty() || "None".equals(ownerInfo)) {
             ownerTextArea.setText("This instrument is not currently assigned to any players");

@@ -7,7 +7,7 @@ import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.api.TimingBus;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.TimingUpdate;
-import com.angrysurfer.core.service.MelodicSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,7 +96,7 @@ public class TiltSequencerPanel extends JPanel implements IBusListener {
             if (sequencer != null) {
                 sequencer.getSequenceData().getHarmonicTiltValuesRaw()[index] = tiltValue;
                 sequencer.getSequenceData().setTiltValue(index, tiltValue);
-                MelodicSequencerManager.getInstance().saveSequence(sequencer);
+                SequencerService.getInstance().saveSequence(sequencer);
             }
 
             // If this is the current active bar, apply the tilt immediately

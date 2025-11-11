@@ -4,7 +4,7 @@ import com.angrysurfer.beats.util.UIHelper;
 import com.angrysurfer.beats.widget.ColorAnimator;
 import com.angrysurfer.core.api.*;
 import com.angrysurfer.core.sequencer.Scale;
-import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.MidiService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -362,7 +362,7 @@ public class InternalSynthPianoPanel extends JPanel {
 
     private void playNote(int note) {
         // Play through internal synth
-        InternalSynthManager.getInstance().playNote(note, 100, 500, SYNTH_MIDI_CHANNEL);
+        MidiService.getInstance().playNote(note, 100, 500, SYNTH_MIDI_CHANNEL);
 
         // Update status
         CommandBus.getInstance().publish(

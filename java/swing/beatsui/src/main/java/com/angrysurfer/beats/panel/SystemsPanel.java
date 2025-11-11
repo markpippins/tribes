@@ -8,7 +8,7 @@ import com.angrysurfer.core.api.StatusUpdate;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.service.PlaybackService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -244,7 +244,7 @@ class SystemsPanel extends JPanel {
                 RedisService.getInstance().saveInstrument(updatedInstrument);
 
                 // Update local cache too
-                InstrumentManager.getInstance().updateInstrument(updatedInstrument);
+                PlaybackService.getInstance().updateInstrument(updatedInstrument);
 
                 // Rest of notification code...
             }

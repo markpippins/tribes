@@ -1,7 +1,7 @@
 package com.angrysurfer.beats;
 
 import com.angrysurfer.beats.panel.MainPanel;
-import com.angrysurfer.beats.panel.internalsynth.InternalSynthControlPanel;
+// import com.angrysurfer.beats.panel.internalsynth.InternalSynthControlPanel;
 import com.angrysurfer.beats.panel.session.SessionPanel;
 import com.angrysurfer.core.Constants;
 import com.angrysurfer.core.api.CommandBus;
@@ -303,10 +303,12 @@ public class Frame extends JFrame implements AutoCloseable {
      * Check if the Internal Synth tab is currently active
      */
     private boolean isInternalSynthTabActive() {
+        // TEMPORARILY DISABLED - InternalSynthControlPanel
+        return false;
         // Find if the active tab contains the InternalSynthControlPanel
-        Component selectedComponent = mainPanel.getSelectedComponent();
-        return selectedComponent instanceof InternalSynthControlPanel ||
-                (selectedComponent != null && findChildOfType(selectedComponent, InternalSynthControlPanel.class) != null);
+        // Component selectedComponent = mainPanel.getSelectedComponent();
+        // return selectedComponent instanceof InternalSynthControlPanel ||
+        //         (selectedComponent != null && findChildOfType(selectedComponent, InternalSynthControlPanel.class) != null);
     }
 
     /**

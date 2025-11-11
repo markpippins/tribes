@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.model.Player;
-import com.angrysurfer.core.service.DeviceManager;
-import com.angrysurfer.core.service.InstrumentManager;
-import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.MidiService;
+import com.angrysurfer.core.service.PlaybackService;
+import com.angrysurfer.core.service.PlaybackService;
 
 public class PlayersTableModel extends DefaultTableModel {
     private static final Logger logger = LoggerFactory.getLogger(PlayersTableModel.class.getName());
@@ -115,7 +115,7 @@ public class PlayersTableModel extends DefaultTableModel {
 
         try {
             if (player.getInstrumentId() != null) {
-                InstrumentWrapper instrument = InstrumentManager.getInstance()
+                InstrumentWrapper instrument = PlaybackService.getInstance()
                         .getInstrumentFromCache(player.getInstrumentId());
                 if (instrument != null) {
                     instrumentName = instrument.getName();
@@ -123,8 +123,8 @@ public class PlayersTableModel extends DefaultTableModel {
                     // Initialize device if needed
                     if (Objects.isNull(instrument.getDevice()) && Objects.nonNull(instrument.getDeviceName())) {
                         try {
-                            javax.sound.midi.MidiDevice device = DeviceManager
-                                    .getMidiDevice(instrument.getDeviceName());
+                            javax.sound.midi.MidiDevice device = MidiService.getInstance()
+                                    .getDevice(instrument.getDeviceName());
 
                             if (device != null) {
                                 instrument.setDevice(device);
@@ -301,7 +301,7 @@ public class PlayersTableModel extends DefaultTableModel {
                         int rowIndex = findPlayerRowIndexById(playerId);
                         if (rowIndex >= 0) {
                             // Get player via PlayerManager
-                            Player player = PlayerManager.getInstance().getPlayerById(playerId);
+                            Player player = PlaybackService.getInstance().getPlayer(playerId);
                             if (player != null) {
                                 // Update table row
                                 updatePlayerRow(player);
@@ -318,7 +318,7 @@ public class PlayersTableModel extends DefaultTableModel {
         // The model stores the player ID in the ID column. Use PlayerManager to look up the Player.
         Object idValue = getValueAt(rowIndex, getColumnIndex(COL_ID));
         if (idValue instanceof Long playerId) {
-            return PlayerManager.getInstance().getPlayerById(playerId);
+            return PlaybackService.getInstance().getPlayer(playerId);
         }
         if (idValue instanceof Player p) {
             return p;

@@ -2,7 +2,7 @@ package com.angrysurfer.beats.panel;
 
 import com.angrysurfer.beats.Symbols;
 import com.angrysurfer.beats.panel.instrument.InstrumentsPanel;
-import com.angrysurfer.beats.panel.internalsynth.InternalSynthControlPanel;
+// import com.angrysurfer.beats.panel.internalsynth.InternalSynthControlPanel;
 import com.angrysurfer.beats.panel.modulation.QuadXYPadPanel;
 import com.angrysurfer.beats.panel.modulation.TuringMachinePanel;
 import com.angrysurfer.beats.panel.modulation.oscillator.LFOPanel;
@@ -24,7 +24,7 @@ import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.service.ChannelManager;
-import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.MidiService;
 import com.angrysurfer.core.service.SessionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,14 +91,14 @@ public class MainPanel extends LivePanel implements AutoCloseable, IBusListener 
     private void setupTabbedPane() {
         tabbedPane = new JTabbedPane();
 
-        InternalSynthControlPanel internalSynthControlPanel = new InternalSynthControlPanel();
+        // InternalSynthControlPanel internalSynthControlPanel = new InternalSynthControlPanel();
         tabbedPane.addTab("Multi", createDrumSequencersPanel());
 
         tabbedPane.addTab("Melo", createMelodicSequencersPanel());
 
         tabbedPane.addTab("Song", createSongPanel());
         tabbedPane.addTab("Mixer", createMixerPanel());
-        tabbedPane.addTab("Synth", internalSynthControlPanel);
+        // tabbedPane.addTab("Synth", internalSynthControlPanel);
         tabbedPane.addTab("Matrix", createModulationMatrixPanel());
         tabbedPane.addTab("Players", new SessionPanel());
 
@@ -599,7 +599,7 @@ public class MainPanel extends LivePanel implements AutoCloseable, IBusListener 
     }
 
     private Component createMixerPanel() {
-        return new MixerPanel(InternalSynthManager.getInstance().getSynthesizer());
+        return new MixerPanel(MidiService.getInstance().getSynthesizer());
     }
 
     private JPanel createMuteButtonsToolbar() {
@@ -654,7 +654,7 @@ public class MainPanel extends LivePanel implements AutoCloseable, IBusListener 
 
     public void playNote(int note, int velocity, int durationMs) {
         int activeMidiChannel = 15;
-        InternalSynthManager.getInstance().playNote(note, velocity, durationMs, activeMidiChannel);
+        MidiService.getInstance().playNote(note, velocity, durationMs, activeMidiChannel);
     }
 
     @Override

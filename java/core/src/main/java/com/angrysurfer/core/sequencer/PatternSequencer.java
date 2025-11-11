@@ -1,7 +1,6 @@
 package com.angrysurfer.core.sequencer;
 
-import com.angrysurfer.core.service.DrumSequencerManager;
-import com.angrysurfer.core.service.MelodicSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -30,12 +29,12 @@ public class PatternSequencer {
     }
 
     private void initializeSequencers() {
-        // Get drum sequencer from manager
-        drumSequencer = DrumSequencerManager.getInstance().getSequencer(0);
+        // Get drum sequencer from service
+        drumSequencer = SequencerService.getInstance().getDrumSequencer(0);
 
         // Get melodic sequencers
-        for (int i = 0; i < MelodicSequencerManager.getInstance().getSequencerCount(); i++) {
-            MelodicSequencer sequencer = MelodicSequencerManager.getInstance().getSequencer(i);
+        List<MelodicSequencer> allMelodicSequencers = SequencerService.getInstance().getAllMelodicSequencers();
+        for (MelodicSequencer sequencer : allMelodicSequencers) {
             if (sequencer != null) {
                 melodicSequencers.add(sequencer);
                 // Initialize empty pattern slot list for this sequencer

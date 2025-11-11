@@ -11,9 +11,9 @@ import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.model.Rule;
 import com.angrysurfer.core.model.Session;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.MidiService;
 import com.angrysurfer.core.service.SessionManager;
-import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.SoundbankService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -813,7 +813,7 @@ public class PlayerTimelinePanel extends LivePanel implements IBusListener {
                 // For channel 9 (MIDI channel 10), show drum name instead of preset
                 if (Objects.equals(player.getChannel(), SequencerConstants.MIDI_DRUM_CHANNEL)) {
                     // Get drum name for the note
-                    String drumName = InternalSynthManager.getInstance().getDrumName(player.getRootNote());
+                    String drumName = MidiService.getInstance().getDrumName(player.getRootNote());
                     playerInfo.append(" - ").append(drumName);
                 } else if (soundbankName != null && !soundbankName.isEmpty()) {
                     // For instruments with loaded soundbanks
@@ -823,7 +823,7 @@ public class PlayerTimelinePanel extends LivePanel implements IBusListener {
 
                     // Try to get preset name from soundbank
                     try {
-                        String presetName = InternalSynthManager.getInstance()
+                        String presetName = SoundbankService.getInstance()
                                 .getPresetNames(soundbankName, bankIndex)
                                 .stream()
                                 .skip(presetNumber)
@@ -837,7 +837,7 @@ public class PlayerTimelinePanel extends LivePanel implements IBusListener {
                     }
                 } else {
                     // For standard internal instruments
-                    String presetName = SoundbankManager.getInstance().getPresetName(instrumentId, presetNumber);
+                    String presetName = SoundbankService.getInstance().getPresetName(instrumentId, presetNumber);
                     if (presetName != null && !presetName.isEmpty()) {
                         playerInfo.append(" - ").append(presetName);
                     }

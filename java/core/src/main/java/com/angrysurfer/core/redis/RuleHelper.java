@@ -3,7 +3,6 @@ package com.angrysurfer.core.redis;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.angrysurfer.core.service.PlayerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

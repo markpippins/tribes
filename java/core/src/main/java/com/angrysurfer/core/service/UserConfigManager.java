@@ -329,7 +329,7 @@ public class UserConfigManager {
                 List<InstrumentWrapper> instruments = RedisService.getInstance().findAllInstruments();
                 if (instruments != null && !instruments.isEmpty()) {
                     instruments.forEach(inst ->
-                            inst.setAvailable(Objects.nonNull(DeviceManager.getMidiDevice(inst.getDeviceName()))));
+                            inst.setAvailable(MidiService.getInstance().getDevice(inst.getDeviceName()) != null));
 
                     getCurrentConfig().setInstruments(instruments);
                     saveConfiguration(getCurrentConfig());
@@ -1156,7 +1156,7 @@ public class UserConfigManager {
                 logger.info("Saving configuration with newly created defaults");
                 try {
                     saveConfiguration(currentConfig);
-                    InstrumentManager.getInstance().refreshCache(currentConfig.getInstruments());
+                    // Note: InstrumentManager.refreshCache removed - cache handled by PlaybackService
                 } catch (Exception e) {
                     logger.error("Error saving configuration with defaults: {}", e.getMessage(), e);
                     return false;

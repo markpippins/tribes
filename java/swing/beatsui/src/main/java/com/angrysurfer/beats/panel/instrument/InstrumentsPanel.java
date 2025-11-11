@@ -296,8 +296,7 @@ public class InstrumentsPanel extends JPanel {
             // Get selected output device from device selection
             MidiDevice device = getSelectedInstrument().getDevice();
             if (device == null) {
-                DeviceManager.getInstance();
-                device = DeviceManager.getMidiDevice(getSelectedInstrument().getDeviceName());
+                device = MidiService.getInstance().getDevice(getSelectedInstrument().getDeviceName());
             }
             if (device == null) {
                 CommandBus.getInstance().publish(
@@ -518,7 +517,7 @@ public class InstrumentsPanel extends JPanel {
                     instrument.getLowestNote(),
                     instrument.getHighestNote(),
                     instrument.isInitialized(),
-                    InstrumentManager.getInstance().determineInstrumentOwner(instrument) // Add owner column
+                    "" // Add owner column
             });
         }
 
@@ -748,8 +747,8 @@ public class InstrumentsPanel extends JPanel {
         if (name == null)
             return null;
 
-        // First try InstrumentManager's cache for better performance
-        for (InstrumentWrapper instrument : InstrumentManager.getInstance().getCachedInstruments()) {
+        // Get instruments from Redis
+        for (InstrumentWrapper instrument : RedisService.getInstance().getInstrumentHelper().findAllInstruments()) {
             if (instrument != null && name.equals(instrument.getName())) {
                 return instrument;
             }
@@ -936,8 +935,8 @@ public class InstrumentsPanel extends JPanel {
                 // Then explicitly update in UserConfigManager to ensure persistence
                 updateInstrumentInUserConfig(updatedInstrument);
 
-                // Now update the InstrumentManager's cache
-                InstrumentManager.getInstance().updateInstrument(updatedInstrument);
+                // Save the instrument
+                PlaybackService.getInstance().saveInstrument(updatedInstrument);
 
                 // Always publish the update event
                 CommandBus.getInstance().publish(Commands.INSTRUMENT_UPDATED, this, updatedInstrument);
@@ -999,7 +998,7 @@ public class InstrumentsPanel extends JPanel {
             String ownerInfo = (String) instrumentsTable.getModel().getValueAt(modelRow,
                     instrumentsTable.getModel().getColumnCount() - 1);
 
-            InstrumentWrapper instrument = InstrumentManager.getInstance().getInstrumentById(id);
+            InstrumentWrapper instrument = PlaybackService.getInstance().getInstrument(id);
             if (instrument != null) {
                 // Check if the instrument has no owner or owner is "None"
                 if (ownerInfo == null || ownerInfo.isEmpty() || "None".equals(ownerInfo)) {
@@ -1061,7 +1060,7 @@ public class InstrumentsPanel extends JPanel {
                 RedisService.getInstance().deleteInstrument(instrument);
 
                 // Also remove from InstrumentManager's cache
-                InstrumentManager.getInstance().removeInstrument(instrument.getId());
+                PlaybackService.getInstance().removeInstrument(instrument.getId());
 
                 deletedCount++;
 
@@ -1131,7 +1130,7 @@ public class InstrumentsPanel extends JPanel {
             }
 
             // Check melodic sequencers
-            for (MelodicSequencer sequencer : MelodicSequencerManager.getInstance().getAllSequencers()) {
+            for (MelodicSequencer sequencer : SequencerService.getInstance().getAllMelodicSequencers()) {
                 if (sequencer != null && sequencer.getPlayer() != null &&
                         sequencer.getPlayer().getInstrumentId() != null &&
                         sequencer.getPlayer().getInstrumentId().equals(instrument.getId())) {
@@ -1140,7 +1139,7 @@ public class InstrumentsPanel extends JPanel {
             }
 
             // Check drum sequencers (which have multiple players)
-            for (DrumSequencer sequencer : DrumSequencerManager.getInstance().getAllSequencers()) {
+            for (DrumSequencer sequencer : SequencerService.getInstance().getAllSequencers()) {
                 if (sequencer != null && sequencer.getPlayers() != null) {
                     for (Player player : sequencer.getPlayers()) {
                         if (player != null &&
@@ -1171,7 +1170,7 @@ public class InstrumentsPanel extends JPanel {
         logger.info("Refreshing instruments table with " + instruments.size() + " instruments from Redis");
 
         // Also refresh the InstrumentManager's cache to keep it in sync
-        InstrumentManager.getInstance().refreshCache(instruments);
+        PlaybackService.getInstance().refreshCache(instruments);
 
         // Add each instrument to the table
         for (InstrumentWrapper instrument : instruments) {
@@ -1185,7 +1184,7 @@ public class InstrumentsPanel extends JPanel {
                         instrument.getLowestNote(),
                         instrument.getHighestNote(),
                         instrument.isInitialized(),
-                        InstrumentManager.getInstance().determineInstrumentOwner(instrument) // Add owner column
+                        "" // Add owner column
                 });
             }
         }
@@ -1260,7 +1259,7 @@ public class InstrumentsPanel extends JPanel {
                     String instrumentName = (String) instrumentsTable.getModel().getValueAt(modelRow, 1);
 
                     // Find the selected instrument
-                    selectedInstrument = InstrumentManager.getInstance().getInstrumentById(instrumentId);
+                    selectedInstrument = PlaybackService.getInstance().getInstrument(instrumentId);
 
                     if (selectedInstrument != null) {
                         logger.info("Selected instrument: {} (ID: {})",
@@ -1327,7 +1326,7 @@ public class InstrumentsPanel extends JPanel {
                 logger.info("Attempting to edit instrument: {} (ID: {})", name, id);
 
                 // Find the instrument by ID instead of name
-                InstrumentWrapper instrument = InstrumentManager.getInstance().getInstrumentById(id);
+                InstrumentWrapper instrument = PlaybackService.getInstance().getInstrument(id);
                 logger.info("Retrieved instrument: {}", instrument != null ? instrument.getName() : "null");
 
                 final InstrumentWrapper finalInstrument = instrument;
@@ -1477,7 +1476,7 @@ public class InstrumentsPanel extends JPanel {
             String deviceName = instrument.getDeviceName();
             if (deviceName != null && !deviceName.isEmpty()) {
                 // First check if device is available
-                List<String> availableDevices = DeviceManager.getInstance().getAvailableOutputDeviceNames();
+                List<String> availableDevices = MidiService.getInstance().getOutputDeviceNames();
                 if (!availableDevices.contains(deviceName)) {
 
                     CommandBus.getInstance().publish(
@@ -1491,7 +1490,7 @@ public class InstrumentsPanel extends JPanel {
                 }
 
                 // Try to reinitialize the device connection
-                MidiDevice device = DeviceManager.getMidiDevice(deviceName);
+                MidiDevice device = MidiService.getInstance().getDevice(deviceName);
                 if (device != null && !device.isOpen()) {
                     device.open();
                 }
@@ -1502,7 +1501,7 @@ public class InstrumentsPanel extends JPanel {
                     instrument.setDevice(device);
                     instrument.setAvailable(true);
                     // Update in cache/config
-                    InstrumentManager.getInstance().updateInstrument(instrument);
+                    PlaybackService.getInstance().updateInstrument(instrument);
 
                     // Update UI and show success message
                     refreshInstrumentsTable();

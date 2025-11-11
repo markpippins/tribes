@@ -10,7 +10,7 @@ import com.angrysurfer.core.api.IBusListener;
 import com.angrysurfer.core.event.PlayerUpdateEvent;
 import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.MidiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -326,7 +326,7 @@ public class PlayerEditDetailPanel extends JPanel {
             int value = noteDial.getValue();
             player.setRootNote(value);
             if (player.getChannel() == SequencerConstants.MIDI_DRUM_CHANNEL)
-                player.setName(InternalSynthManager.getInstance().getDrumName(player.getRootNote()));
+                player.setName(MidiService.getInstance().getDrumName(player.getRootNote()));
 
             // Create a player update event
             CommandBus.getInstance().publish(

@@ -4,7 +4,7 @@ import com.angrysurfer.beats.util.UIHelper;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.MelodicSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
-import com.angrysurfer.core.service.MelodicSequencerManager;
+import com.angrysurfer.core.service.SequencerService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,7 +40,7 @@ public class PopupMixerPanel extends JPanel {
         this.drumSequencer = drumSequencer;
 
         // Get melodic sequencers from manager
-        this.melodicSequencers = MelodicSequencerManager.getInstance().getAllSequencers();
+        this.melodicSequencers = SequencerService.getInstance().getAllMelodicSequencers();
         if (melodicSequencers == null) {
             melodicSequencers = List.of(); // Empty list if none available
         }
