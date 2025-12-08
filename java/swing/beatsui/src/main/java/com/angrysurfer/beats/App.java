@@ -19,7 +19,7 @@ import com.angrysurfer.core.service.MidiService;
 import com.angrysurfer.core.service.PlaybackService;
 import com.angrysurfer.core.service.SessionManager;
 import com.angrysurfer.core.service.SoundbankService;
-import com.angrysurfer.core.service.UserConfigManager;
+import com.angrysurfer.core.service.UserConfigManager; 
 import com.formdev.flatlaf.FlatLightLaf;
 
 public class App implements IBusListener {

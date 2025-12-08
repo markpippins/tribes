@@ -1,6 +1,6 @@
 package com.angrysurfer.beats;
 
-import com.angrysurfer.beats.panel.MainPanel;
+import com.angrysurfer.beats.MainPanel;
 // import com.angrysurfer.beats.panel.internalsynth.InternalSynthControlPanel;
 import com.angrysurfer.beats.panel.session.SessionPanel;
 import com.angrysurfer.core.Constants;

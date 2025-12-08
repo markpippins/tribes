@@ -1,6 +1,6 @@
 package com.angrysurfer.beats.panel.sequencer.poly;
 
-import com.angrysurfer.beats.panel.MainPanel;
+import com.angrysurfer.beats.MainPanel;
 import com.angrysurfer.beats.widget.DrumSelectorButton;
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;

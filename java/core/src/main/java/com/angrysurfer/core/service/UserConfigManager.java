@@ -334,11 +334,19 @@ public class UserConfigManager {
                     getCurrentConfig().setInstruments(instruments);
                     saveConfiguration(getCurrentConfig());
                     logger.info("Loaded {} instruments from Redis", instruments.size());
+                } else {
+                    // No instruments found - create defaults
+                    logger.info("No instruments found, creating defaults");
+                    createDefaultInstruments();
                 }
             } catch (Exception e) {
                 logger.error("Error loading instruments: {}", e.getMessage());
-                // Clean up resources
-                // Notify UI of failure
+                // Try to create defaults as fallback
+                try {
+                    createDefaultInstruments();
+                } catch (Exception ex) {
+                    logger.error("Error creating default instruments: {}", ex.getMessage());
+                }
             }
         }
 
@@ -379,6 +387,52 @@ public class UserConfigManager {
             }
         } catch (Exception e) {
             logger.error("Error registering Gervill instrument: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Create default instruments for melodic and drum channels
+     */
+    private void createDefaultInstruments() {
+        try {
+            List<InstrumentWrapper> defaultInstruments = new ArrayList<>();
+            
+            // Create melodic instruments
+            for (int i = 0; i < SequencerConstants.MELODIC_CHANNELS.length; i++) {
+                try {
+                    InstrumentWrapper melodic = createMelodicInstrument(i);
+                    defaultInstruments.add(melodic);
+                    // Save to Redis
+                    RedisService.getInstance().saveInstrument(melodic);
+                } catch (Exception e) {
+                    logger.error("Error creating melodic instrument {}: {}", i, e.getMessage());
+                }
+            }
+            
+            // Create drum instrument
+            try {
+                InstrumentWrapper drum = createDrumInstrument();
+                defaultInstruments.add(drum);
+                // Save to Redis
+                RedisService.getInstance().saveInstrument(drum);
+            } catch (Exception e) {
+                logger.error("Error creating drum instrument: {}", e.getMessage());
+            }
+            
+            // Add to config
+            if (currentConfig.getInstruments() == null) {
+                currentConfig.setInstruments(new ArrayList<>());
+            }
+            currentConfig.getInstruments().addAll(defaultInstruments);
+            saveConfiguration(currentConfig);
+            
+            logger.info("Created {} default instruments", defaultInstruments.size());
+            
+            // Publish event to notify UI
+            CommandBus.getInstance().publish(Commands.INSTRUMENTS_REFRESHED, this, null);
+            
+        } catch (Exception e) {
+            logger.error("Error in createDefaultInstruments: {}", e.getMessage(), e);
         }
     }
 

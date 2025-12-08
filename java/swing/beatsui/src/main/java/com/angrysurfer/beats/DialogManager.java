@@ -43,7 +43,6 @@ import com.angrysurfer.core.redis.RedisService;
 import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.service.PlaybackService;
-import com.angrysurfer.core.service.PlaybackService;
 import com.angrysurfer.core.service.SessionManager;
 import com.angrysurfer.core.util.UserConfigConverter;
 import com.angrysurfer.beats.panel.player.PlayerEditPanel;

@@ -1,31 +1,22 @@
 package com.angrysurfer.core.api;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.angrysurfer.core.model.Player;
 import com.angrysurfer.core.sequencer.TimingUpdate;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * High-performance timing bus optimized for frequent timing updates.
+ * Uses direct synchronous dispatch for minimal latency.
+ */
 public class TimingBus extends AbstractBus {
-    private static final String[] EMPTY = new String[]{};
     private static TimingBus instance;
-    private static final Logger LOG = LoggerFactory.getLogger(TimingBus.class);
-    // Initialize field BEFORE constructor is called
-    private final ConcurrentLinkedQueue<IBusListener> timingListeners = new ConcurrentLinkedQueue<>();
-    // removed unused shared command and diagnostic fields
+    
+    private final List<IBusListener> timingListeners = new CopyOnWriteArrayList<>();
 
-    // Constructor must be after field initialization
     private TimingBus() {
-        // We'll handle registration ourselves instead of relying on parent
-        // Don't call super() which calls register() before fields are initialized
-
-        // Log initialization at debug level
-        logger.debug("TimingBus initialized with {} listeners", timingListeners.size());
-
-        // Diagnostic thread removed; use logging if needed
+        super();
+        logger.debug("TimingBus initialized");
     }
 
     public static TimingBus getInstance() {
@@ -35,81 +26,71 @@ public class TimingBus extends AbstractBus {
         return instance;
     }
 
-    @Override
-    public void publish(String commandName, Object source, Object data) {
-    // Add immediate diagnostic output
-    // logger.debug("TimingBus: Publishing {} listeners: {}", commandName, timingListeners.size());
-
-        if (Commands.TIMING_UPDATE.equals(commandName)) {
-            // DON'T reuse the shared command for timing - create a new one for thread
-            // safety
-            Command cmd = new Command(commandName, source, data);
-
-            // Fast path for timing updates - call listeners directly
-            for (IBusListener listener : timingListeners) {
-                if (listener != source) { // Avoid sending to self
-                    try {
-                        listener.onAction(cmd);
-                    } catch (Exception e) {
-                        LOG.error("Error in timing listener: {}", e.getMessage(), e);
-                    }
-                }
-            }
-            // return;
-        }
-
-        // For non-timing events, use parent implementation
-        // super.publish(commandName, source, data);
-    }
-
-    // Add a method to check registration
-    public boolean isRegistered(IBusListener listener) {
-        return timingListeners.contains(listener);
-    }
-
-    // previously had an updateSharedCommand helper; removed as unused
-
-    // Add a specialized method for highest performance timing events
-    public void publishTimingUpdate(TimingUpdate update) {
-        // Even more optimized path for timing updates
-        Command command = new Command(Commands.TIMING_UPDATE, this, update);
-        for (IBusListener listener : timingListeners) {
-            try {
-                ((Player) listener).onTick(update); // Direct call to avoid command overhead
-            } catch (ClassCastException e) {
-                // Fall back to standard method if not a Player
-                listener.onAction(command);
-            } catch (Exception e) {
-                // Minimal error handling
-            }
-        }
-    }
-
     public void register(IBusListener listener) {
-        register(listener, EMPTY);
+        if (listener == null) {
+            logger.warn("Attempted to register null listener");
+            return;
+        }
+        
+        if (!timingListeners.contains(listener)) {
+            timingListeners.add(listener);
+            logger.debug("Registered timing listener: {}", listener.getClass().getSimpleName());
+        }
     }
 
     @Override
     public void register(IBusListener listener, String[] commands) {
-        if (listener != null) {
-            if (timingListeners == null) {
-                LOG.error("TimingBus: timingListeners is null!");
-                return;
-            }
+        register(listener);
+        super.register(listener, commands);
+    }
 
-            if (!timingListeners.contains(listener)) {
-                timingListeners.add(listener);
-                LOG.debug("TimingBus: Registered listener: {}", listener.getClass() != null ? listener.getClass().getSimpleName() + ": " + listener : "null");
+    @Override
+    public void unregister(IBusListener listener) {
+        if (listener != null) {
+            timingListeners.remove(listener);
+            super.unregister(listener);
+            logger.debug("Unregistered timing listener: {}", listener.getClass().getSimpleName());
+        }
+    }
+
+    public boolean isRegistered(IBusListener listener) {
+        return timingListeners.contains(listener);
+    }
+
+    @Override
+    public void publish(String command, Object sender, Object data) {
+        // Fast path for timing updates - direct dispatch
+        if (Commands.TIMING_UPDATE.equals(command) && data instanceof TimingUpdate update) {
+            publishTimingUpdate(update);
+        } else {
+            // For other commands, use parent implementation
+            super.publish(command, sender, data);
+        }
+    }
+
+    public void publishTimingUpdate(TimingUpdate update) {
+        if (update == null) {
+            return;
+        }
+        
+        Command command = new Command(Commands.TIMING_UPDATE, this, update);
+        
+        // Direct dispatch - no reactive overhead
+        for (IBusListener listener : timingListeners) {
+            try {
+                listener.onAction(command);
+            } catch (Exception e) {
+                // Minimal error handling for performance
+                logger.error("Error in timing listener {}: {}", 
+                    listener.getClass().getSimpleName(), e.getMessage());
             }
         }
     }
 
     @Override
-    public void unregister(IBusListener listener) {
-        if (listener != null && timingListeners != null) {
-            timingListeners.remove(listener);
-            // logger.debug("TimingBus: Unregistered listener: {}",
-            //         (listener.getClass() != null ? listener.getClass().getSimpleName() : "null"));
-        }
+    public void shutdown() {
+        logger.info("Shutting down TimingBus");
+        timingListeners.clear();
+        super.shutdown();
     }
 }

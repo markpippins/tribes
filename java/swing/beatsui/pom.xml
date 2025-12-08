@@ -19,6 +19,12 @@
   <name>beatgen-swing</name>
   <url>http://maven.apache.org</url>
   <dependencies>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.angrysurfer.beats</groupId>
       <artifactId>beatgen-core</artifactId>
