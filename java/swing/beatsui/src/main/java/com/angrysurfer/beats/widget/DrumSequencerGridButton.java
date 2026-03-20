@@ -1,22 +1,32 @@
 package com.angrysurfer.beats.widget;
 
-import com.angrysurfer.beats.util.UIHelper;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultButtonModel;
+import javax.swing.JButton;
+import javax.swing.Timer;
+
+import com.angrysurfer.beats.util.UIHelper;
 
 public class DrumSequencerGridButton extends JButton {
 
-    private final int drumPadIndex = -1; // Default to -1 for unassigned index
-    private final Color temporaryColor = new Color(200, 150, 40); // Amber highlight
     private boolean isHighlighted = false;
     private boolean isTemporary = false;
-    private Color normalColor;
     private boolean inPattern = true;
-    private Color highlightColor = UIHelper.fadedOrange; // Default highlight color
+    private Color highlightColor = UIHelper.fadedOrange;
 
-    // Add properties to store parameter values
-    private int velocity = 100;     // Default values
+    // Cached colors to avoid allocation in paintComponent
+    private static final Color COLOR_SELECTED = new Color(60, 180, 120);
+    private static final Color COLOR_INACTIVE = new Color(60, 60, 60);
+    private static final Color COLOR_TEMPORARY = new Color(200, 150, 40);
+
+    // Step parameters
+    private int velocity = 100;
     private int decay = 250;
     private int probability = 100;
     private int nudge = 0;
@@ -24,17 +34,13 @@ public class DrumSequencerGridButton extends JButton {
     private int chorus = 0;
     private int reverb = 0;
 
-    // Flags to indicate which parameters to visualize
     private boolean showVelocity = true;
     private boolean showDecay = true;
     private boolean showProbability = true;
     private boolean showNudge = true;
-    private boolean showEffects = false;  // pan, chorus, reverb
+    private boolean showEffects = false;
 
-    // Step index within pattern (for debugging)
     private int stepIndex = -1;
-
-    // Accent property
     private boolean accented = false;
 
     /**
@@ -83,7 +89,7 @@ public class DrumSequencerGridButton extends JButton {
         setForeground(Color.WHITE);
         setBorderPainted(false);
         setFocusPainted(false);
-        setContentAreaFilled(true);
+        setContentAreaFilled(false); // prevent L&F from painting background before our custom fill
         setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
     }
 
@@ -214,13 +220,25 @@ public class DrumSequencerGridButton extends JButton {
     }
 
     /**
+     * Set highlighted state without triggering a repaint (batch with setHighlightColorQuiet)
+     */
+    public void setHighlightedQuiet(boolean highlighted) {
+        this.isHighlighted = highlighted;
+    }
+
+    /**
+     * Set highlight color without triggering a repaint
+     */
+    public void setHighlightColorQuiet(Color color) {
+        this.highlightColor = color;
+    }
+
+    /**
      * Set whether this button is highlighted
-     *
-     * @param highlighted true to highlight, false to unhighlight
      */
     public void setHighlighted(boolean highlighted) {
         this.isHighlighted = highlighted;
-        repaint(); // Just repaint, the actual color is handled in paintComponent
+        repaint();
     }
 
     /**
@@ -308,15 +326,6 @@ public class DrumSequencerGridButton extends JButton {
     }
 
     /**
-     * Get the color to use for displaying velocity
-     */
-    private Color getVelocityColor() {
-        // Normalize velocity (0-127) to (0-255)
-        int value = (int) (velocity * 2.0);
-        return new Color(value, value, 0); // Yellow with intensity based on velocity
-    }
-
-    /**
      * Get alpha value for probability display
      */
     private int getProbabilityAlpha() {
@@ -325,10 +334,7 @@ public class DrumSequencerGridButton extends JButton {
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         int width = getWidth();
         int height = getHeight();
@@ -340,15 +346,13 @@ public class DrumSequencerGridButton extends JButton {
             if (!inPattern) {
                 g2d.setColor(UIHelper.charcoalGray);
             } else {
-                // Base color for selected (inactive) buttons
-                g2d.setColor(new Color(60, 180, 120));
+                g2d.setColor(COLOR_SELECTED);
             }
         } else {
             if (!inPattern) {
                 g2d.setColor(UIHelper.darkGray);
             } else {
-                // Base color for inactive buttons
-                g2d.setColor(new Color(60, 60, 60));
+                g2d.setColor(COLOR_INACTIVE);
             }
         }
 
@@ -427,7 +431,7 @@ public class DrumSequencerGridButton extends JButton {
 
         // If using temporary state, draw a border
         if (isTemporary) {
-            g2d.setColor(temporaryColor);
+            g2d.setColor(COLOR_TEMPORARY);
             g2d.drawRect(0, 0, width - 1, height - 1);
         }
     }

@@ -1,10 +1,35 @@
 package com.angrysurfer.beats.panel.sequencer.poly;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.util.List;
+import java.util.function.Consumer;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.Symbols;
 import com.angrysurfer.beats.panel.player.SoundParametersPanel;
 import com.angrysurfer.beats.util.UIHelper;
-import com.angrysurfer.beats.visualization.Visualizer;
-import com.angrysurfer.core.api.*;
+import com.angrysurfer.core.api.Command;
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.api.IBusListener;
+import com.angrysurfer.core.api.StatusUpdate;
 import com.angrysurfer.core.event.DrumPadSelectionEvent;
 import com.angrysurfer.core.event.NoteEvent;
 import com.angrysurfer.core.sequencer.DrumSequenceModifier;
@@ -12,19 +37,9 @@ import com.angrysurfer.core.sequencer.DrumSequencer;
 import com.angrysurfer.core.sequencer.SequencerConstants;
 import com.angrysurfer.core.sequencer.TimingDivision;
 import com.angrysurfer.core.service.DrumSequencerManager;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * A sequencer panel with X0X-style step sequencing capabilities. This is the UI
@@ -38,7 +53,6 @@ public class DrumSequencerGridPanel extends JPanel implements IBusListener {
 
     private DrumSequencerInfoPanel drumInfoPanel;
     private DrumSequenceNavigationPanel navigationPanel;
-    private Visualizer visualizer;
 
     private DrumSequencer sequencer;
 
