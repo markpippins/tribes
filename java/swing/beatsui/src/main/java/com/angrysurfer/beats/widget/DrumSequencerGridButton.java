@@ -1,11 +1,29 @@
 package com.angrysurfer.beats.widget;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+
+import javax.swing.BorderFactory;
+import javax.swing.DefaultButtonModel;
+import javax.swing.JButton;
+import javax.swing.Timer;
+
 import com.angrysurfer.beats.util.UIHelper;
 
-import javax.swing.*;
-import java.awt.*;
-
 public class DrumSequencerGridButton extends JButton {
+
+    // Paint-time color constants — allocated once, not per paint call
+    private static final Color COLOR_SELECTED_IN_PATTERN  = new Color(60, 180, 120);
+    private static final Color COLOR_INACTIVE_IN_PATTERN  = new Color(60, 60, 60);
+    private static final Color COLOR_VELOCITY_BAR         = new Color(255, 255, 0, 100);
+    private static final Color COLOR_NUDGE_MARKER         = new Color(255, 0, 0, 150);
+    private static final Color COLOR_PAN_MARKER           = new Color(0, 0, 255, 150);
+    private static final Color COLOR_REVERB_CORNER        = new Color(128, 0, 128, 150);
+    private static final Color COLOR_CHORUS_CORNER        = new Color(0, 128, 128, 150);
+    private static final Font  FONT_STEP_INDEX            = new Font("Monospaced", Font.PLAIN, 9);
 
     private final int drumPadIndex = -1; // Default to -1 for unassigned index
     private final Color temporaryColor = new Color(200, 150, 40); // Amber highlight
@@ -83,7 +101,7 @@ public class DrumSequencerGridButton extends JButton {
         setForeground(Color.WHITE);
         setBorderPainted(false);
         setFocusPainted(false);
-        setContentAreaFilled(true);
+        setContentAreaFilled(false); // We own the entire surface in paintComponent
         setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
     }
 
@@ -220,7 +238,22 @@ public class DrumSequencerGridButton extends JButton {
      */
     public void setHighlighted(boolean highlighted) {
         this.isHighlighted = highlighted;
-        repaint(); // Just repaint, the actual color is handled in paintComponent
+        repaint();
+    }
+
+    /** Set highlight color without triggering a repaint — call repaint() separately. */
+    public void setHighlightColorQuiet(Color color) {
+        this.highlightColor = color;
+    }
+
+    /** Set highlighted state without triggering a repaint — call repaint() separately. */
+    public void setHighlightedQuiet(boolean highlighted) {
+        this.isHighlighted = highlighted;
+    }
+
+    public void setHighlightColor(Color color) {
+        this.highlightColor = color;
+        repaint();
     }
 
     /**
@@ -283,14 +316,6 @@ public class DrumSequencerGridButton extends JButton {
     }
 
     /**
-     * Set custom highlight color for this step button
-     */
-    public void setHighlightColor(Color color) {
-        this.highlightColor = color;
-        repaint();
-    }
-
-    /**
      * Set active state without triggering events
      * This is used during grid refreshes to avoid event loops
      *
@@ -328,8 +353,7 @@ public class DrumSequencerGridButton extends JButton {
         super.paintComponent(g);
 
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+        // No antialiasing needed — all fills are axis-aligned rectangles
         int width = getWidth();
         int height = getHeight();
 
@@ -337,19 +361,9 @@ public class DrumSequencerGridButton extends JButton {
         if (isHighlighted()) {
             g2d.setColor(highlightColor);
         } else if (isSelected()) {
-            if (!inPattern) {
-                g2d.setColor(UIHelper.charcoalGray);
-            } else {
-                // Base color for selected (inactive) buttons
-                g2d.setColor(new Color(60, 180, 120));
-            }
+            g2d.setColor(inPattern ? COLOR_SELECTED_IN_PATTERN : UIHelper.charcoalGray);
         } else {
-            if (!inPattern) {
-                g2d.setColor(UIHelper.darkGray);
-            } else {
-                // Base color for inactive buttons
-                g2d.setColor(new Color(60, 60, 60));
-            }
+            g2d.setColor(inPattern ? COLOR_INACTIVE_IN_PATTERN : UIHelper.darkGray);
         }
 
         // Fill the base button
@@ -359,61 +373,47 @@ public class DrumSequencerGridButton extends JButton {
         if (isSelected() && inPattern) {
             // Draw probability as overall opacity
             if (showProbability && probability < 100) {
-                // Create a semi-transparent overlay
                 Color overlayColor = new Color(0, 0, 0, 255 - getProbabilityAlpha());
                 g2d.setColor(overlayColor);
                 g2d.fillRect(0, 0, width, height);
             }
 
-            // Draw velocity as a vertical bar
             if (showVelocity) {
-                // Calculate height based on velocity (0-127)
                 int velocityHeight = (int) (height * (velocity / 127.0));
-                g2d.setColor(new Color(255, 255, 0, 100)); // Semi-transparent yellow
+                g2d.setColor(COLOR_VELOCITY_BAR);
                 g2d.fillRect(0, height - velocityHeight, width / 4, velocityHeight);
             }
 
-            // Draw decay as a horizontal bar
             if (showDecay) {
-                // Calculate width based on decay (normalized to reasonable range)
                 int decayWidth = Math.min(width - 2, (int) (width * (decay / 500.0)));
-                g2d.setColor(Color.BLUE); // Semi-transparent green
-                // g2d.setColor(new Color(0, 200, 0, 100)); // Semi-transparent green
+                g2d.setColor(Color.BLUE);
                 g2d.fillRect(width / 4, height / 2, decayWidth, height / 4);
             }
 
-            // Draw nudge as a position marker
             if (showNudge && nudge != 0) {
-                int centerX = width / 2;
-                int nudgeOffset = (int) (width * (nudge / 100.0)); // Normalize to reasonable range
-
-                g2d.setColor(new Color(255, 0, 0, 150)); // Semi-transparent red
-                g2d.fillRect(centerX + nudgeOffset - 1, 0, 3, height / 4);
+                int nudgeOffset = (int) (width * (nudge / 100.0));
+                g2d.setColor(COLOR_NUDGE_MARKER);
+                g2d.fillRect(width / 2 + nudgeOffset - 1, 0, 3, height / 4);
             }
 
-            // Draw effects indicators if enabled
             if (showEffects) {
-                // Draw pan as position (left to right)
                 int panX = (int) (width * (pan / 127.0));
-                g2d.setColor(new Color(0, 0, 255, 150)); // Semi-transparent blue
+                g2d.setColor(COLOR_PAN_MARKER);
                 g2d.fillRect(panX - 1, height - 4, 3, 3);
 
-                // Draw reverb and chorus as small indicators in corners if above threshold
                 if (reverb > 20) {
-                    g2d.setColor(new Color(128, 0, 128, 150)); // Semi-transparent purple
+                    g2d.setColor(COLOR_REVERB_CORNER);
                     g2d.fillRect(0, 0, 4, 4);
                 }
-
                 if (chorus > 20) {
-                    g2d.setColor(new Color(0, 128, 128, 150)); // Semi-transparent teal
+                    g2d.setColor(COLOR_CHORUS_CORNER);
                     g2d.fillRect(width - 4, 0, 4, 4);
                 }
             }
 
-            // Debug output - draw step number
             if (stepIndex >= 0) {
                 g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Monospaced", Font.PLAIN, 9));
+                g2d.setFont(FONT_STEP_INDEX);
                 g2d.drawString(String.valueOf(stepIndex + 1), width / 2 - 3, height / 2 + 3);
             }
         }
