@@ -1,0 +1,50 @@
+2025-10-12 13:34:23.871 [main] INFO  com.angrysurfer.beats.App - Starting application...
+2025-10-12 13:34:24.208 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.SplashScreen - Splash screen status: Initializing application...
+2025-10-12 13:34:24.440 [Thread-2] INFO  c.a.core.redis.SessionHelper - SessionHelper initialized with configured ObjectMapper
+2025-10-12 13:34:24.444 [Thread-2] INFO  c.a.core.redis.InstrumentHelper - InstrumentHelper initialized with ObjectMapper configured to ignore unknown fields
+2025-10-12 13:34:24.452 [Thread-2] INFO  c.a.core.redis.RedisService - RedisService singleton instance created
+2025-10-12 13:34:24.452 [Thread-2] INFO  com.angrysurfer.beats.App - Redis service initialized
+2025-10-12 13:34:24.452 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.SplashScreen - Splash screen status: Connected to database
+2025-10-12 13:34:24.454 [Thread-2] INFO  c.a.core.service.DeviceManager - Refreshing MIDI device list
+2025-10-12 13:34:24.454 [Thread-2] INFO  c.a.core.service.DeviceManager - getMidiOutDevices()
+2025-10-12 13:34:24.494 [Thread-2] INFO  c.a.core.service.DeviceManager - Found MIDI output device: Gervill (Receivers: -1)
+2025-10-12 13:34:24.496 [Thread-2] INFO  c.a.core.service.DeviceManager - Found MIDI output device: Real Time Sequencer (Receivers: -1)
+2025-10-12 13:34:24.497 [Thread-2] INFO  c.a.core.service.DeviceManager - Found MIDI output device: Microsoft MIDI Mapper (Receivers: -1)
+2025-10-12 13:34:24.497 [Thread-2] INFO  c.a.core.service.DeviceManager - Found MIDI output device: Microsoft GS Wavetable Synth (Receivers: -1)
+2025-10-12 13:34:24.501 [Thread-2] INFO  c.a.core.service.DeviceManager - Refreshing MIDI device list
+2025-10-12 13:34:24.501 [Thread-2] INFO  c.a.core.service.DeviceManager - getMidiOutDevices()
+2025-10-12 13:34:24.506 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.SplashScreen - Splash screen status: Detected MIDI devices
+2025-10-12 13:34:24.508 [Thread-2] INFO  c.a.core.service.SoundbankManager - Initializing soundbanks...
+2025-10-12 13:34:25.243 [Thread-2] INFO  c.a.core.service.SoundbankManager - Synthesizer initialized: Gervill
+2025-10-12 13:34:25.252 [Thread-2] INFO  c.a.core.service.SoundbankManager - Added default soundbank with 235 instruments
+2025-10-12 13:34:25.936 [Thread-2] INFO  c.a.core.service.SoundbankManager - Loaded soundbank from file: ChateauGrand-Plus-Instruments-bs16i-v4.sf2 with 77 instruments
+2025-10-12 13:34:26.255 [Thread-2] INFO  c.a.core.service.SoundbankManager - Loaded soundbank from file: Mario_and_Luigi_Partners_in_Time-_Soundfont.sf2 with 215 instruments
+2025-10-12 13:34:26.283 [Thread-2] INFO  c.a.core.service.SoundbankManager - Loaded soundbank from file: Syndrum.sf2 with 1 instruments
+2025-10-12 13:34:26.349 [Thread-2] INFO  c.a.core.service.SoundbankManager - Loaded soundbank from file: SynthModule.sf2 with 77 instruments
+2025-10-12 13:34:26.443 [Thread-2] INFO  c.a.core.service.SoundbankManager - Soundbank initialization complete. Total soundbanks: 7
+2025-10-12 13:34:26.444 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.SplashScreen - Splash screen status: Loaded soundbanks
+2025-10-12 13:34:26.569 [Thread-2] INFO  c.a.c.service.InternalSynthManager - Synthesizer initialized: Gervill
+2025-10-12 13:34:26.570 [Thread-2] INFO  c.a.c.service.InternalSynthManager - Initialized synthesizer data with 235 instruments
+2025-10-12 13:34:26.571 [Thread-2] INFO  c.a.core.service.SoundbankManager - Initializing soundbanks...
+2025-10-12 13:34:26.571 [Thread-2] INFO  c.a.core.service.SoundbankManager - Added default soundbank with 235 instruments
+2025-10-12 13:34:27.296 [Thread-2] INFO  c.a.core.service.SoundbankManager - Soundbank initialization complete. Total soundbanks: 7
+2025-10-12 13:34:27.356 [Thread-2] INFO  c.a.c.service.InternalSynthManager - Synthesizer initialized: Gervill
+2025-10-12 13:34:27.437 [Thread-2] INFO  c.a.c.service.InternalSynthManager - Synthesizer initialized: Gervill
+2025-10-12 13:34:27.438 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.SplashScreen - Splash screen status: Loaded internal synthesizer
+2025-10-12 13:34:27.555 [Thread-2] ERROR com.angrysurfer.beats.App - Critical initialization error: Failed to initialize services
+2025-10-12 13:34:27.555 [Thread-2] ERROR com.angrysurfer.beats.App - Exception: Failed to connect to any host resolved for DNS name.
+2025-10-12 13:34:27.660 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.App - Loading frame state for Look and Feel
+2025-10-12 13:34:27.671 [AWT-EventQueue-0] ERROR c.a.core.redis.RedisService - Error loading frame state: Failed to connect to any host resolved for DNS name.
+2025-10-12 13:34:27.673 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.App - Frame state loaded: null
+2025-10-12 13:34:27.787 [AWT-EventQueue-0] INFO  com.angrysurfer.beats.App - Set default Look and Feel: FlatLightLaf
+2025-10-12 13:34:27.918 [AWT-EventQueue-0] INFO  c.a.core.service.InstrumentManager - Refreshing instruments cache
+2025-10-12 13:34:27.918 [AWT-EventQueue-0] INFO  c.a.core.service.InstrumentManager - Initializing instrument cache
+2025-10-12 13:34:27.921 [AWT-EventQueue-0] INFO  c.a.core.service.InstrumentManager - Cached 0 instruments
+2025-10-12 13:34:27.922 [AWT-EventQueue-0] INFO  c.a.core.service.PlayerManager - PlayerManager registered for specific events
+2025-10-12 13:34:28.304 [AWT-EventQueue-0] INFO  c.a.core.service.SoundbankManager - Initializing soundbanks...
+2025-10-12 13:34:28.305 [AWT-EventQueue-0] INFO  c.a.core.service.SoundbankManager - Added default soundbank with 235 instruments
+2025-10-12 13:34:29.041 [AWT-EventQueue-0] INFO  c.a.core.service.SoundbankManager - Soundbank initialization complete. Total soundbanks: 7
+2025-10-12 13:34:29.043 [AWT-EventQueue-0] INFO  c.a.b.p.i.InternalSynthControlPanel - Retrieved 128 preset names for bank 0
+2025-10-12 13:34:29.048 [AWT-EventQueue-0] INFO  c.a.b.p.i.InternalSynthControlPanel - Sent program change: channel=15, bank=0, program=0
+2025-10-12 13:34:29.049 [AWT-EventQueue-0] ERROR c.a.b.p.i.InternalSynthControlPanel - Error changing program: Cannot read the array length because "this.oscillatorPanels" is null
+2025-10-12 13:34:29.189 [AWT-EventQueue-0] ERROR c.a.core.sequencer.DrumSequencer - Cannot initialize players - no active session

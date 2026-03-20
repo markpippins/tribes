@@ -130,21 +130,6 @@ public class Commands {
     public static final String KEY_HELD = "KEY_HELD";
     public static final String KEY_RELEASED = "KEY_RELEASED";
 
-    // Visualization Commands
-    public static final String START_VISUALIZATION = "START_VISUALIZATION";
-    public static final String STOP_VISUALIZATION = "STOP_VISUALIZATION";
-    public static final String LOCK_CURRENT_VISUALIZATION = "LOCK_CURRENT_VISUALIZATION";
-    public static final String UNLOCK_CURRENT_VISUALIZATION = "UNLOCK_CURRENT_VISUALIZATION";
-    public static final String VISUALIZATION_LOCKED = "VISUALIZATION_LOCKED";
-    public static final String VISUALIZATION_UNLOCKED = "VISUALIZATION_UNLOCKED";
-
-    // Visualization Commands
-    public static final String VISUALIZATION_SELECTED = "VISUALIZATION_SELECTED";
-    public static final String VISUALIZATION_STARTED = "VISUALIZATION_STARTED";
-    public static final String VISUALIZATION_STOPPED = "VISUALIZATION_STOPPED";
-    public static final String VISUALIZATION_REGISTERED = "VISUALIZATION_REGISTERED";
-    public static final String VISUALIZATION_HANDLER_REFRESH_REQUESTED = "VISUALIZATION_HANDLER_REFRESH_REQUESTED";
-
     // Logging commands
     public static final String LOG_DEBUG = "LOG_DEBUG";
     public static final String LOG_INFO = "LOG_INFO";

@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.angrysurfer.beats.panel.GridPanel;
 import com.angrysurfer.beats.panel.ComplexLFOPanel;
 import com.angrysurfer.beats.panel.GlobalMuteButtonsPanel;
 import com.angrysurfer.beats.panel.LaunchPanel;
@@ -141,7 +142,7 @@ public class MainPanel extends LivePanel implements AutoCloseable, IBusListener 
 
         tabbedPane.addTab("Logs", new LoggingPanel());
         tabbedPane.addTab("Sandbox", createSandbox());
-        // tabbedPane.addTab("Visualizer", new GridPanel());
+        tabbedPane.addTab("Grid", new GridPanel());
 
         tabbedPane.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 

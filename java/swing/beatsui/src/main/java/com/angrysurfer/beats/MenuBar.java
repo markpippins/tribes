@@ -1,21 +1,18 @@
 package com.angrysurfer.beats;
 
-import com.angrysurfer.beats.diagnostic.DiagnosticLogBuilder;
-// import com.angrysurfer.beats.diagnostic.DiagnosticsManager;
-import com.angrysurfer.beats.diagnostic.DiagnosticsSplashScreen;
-// import com.angrysurfer.beats.diagnostic.suite.RedisServiceDiagnostics;
-import com.angrysurfer.beats.visualization.IVisualizationHandler;
-import com.angrysurfer.beats.visualization.VisualizationCategory;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+
 import com.angrysurfer.core.api.Command;
 import com.angrysurfer.core.api.CommandBus;
 import com.angrysurfer.core.api.Commands;
 import com.angrysurfer.core.api.IBusListener;
-
-import javax.swing.*;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MenuBar extends JMenuBar implements IBusListener {
 
@@ -561,17 +558,6 @@ public class MenuBar extends JMenuBar implements IBusListener {
         // optionsMenu.add(diagnosticsMenu);
         */
 
-        // Register visualization listener
-        CommandBus.getInstance().register(this, new String[]{
-                Commands.VISUALIZATION_REGISTERED,
-                Commands.VISUALIZATION_STARTED,
-                Commands.LOCK_CURRENT_VISUALIZATION,
-                Commands.VISUALIZATION_LOCKED,
-                Commands.UNLOCK_CURRENT_VISUALIZATION,
-                Commands.VISUALIZATION_UNLOCKED,
-                Commands.VISUALIZATION_STOPPED
-        });
-
         // Help Menu
         JMenu helpMenu = new JMenu("Help");
         helpMenu.setMnemonic(KeyEvent.VK_H);
@@ -585,10 +571,6 @@ public class MenuBar extends JMenuBar implements IBusListener {
 
     @Override
     public void onAction(Command action) {
-        // Move the visualization menu logic here from the anonymous class
-        // You may need to refactor the visualization menu fields to be instance fields
-        // and move the logic from the anonymous onAction to here.
-        // For now, just leave this as a stub if you want to migrate logic incrementally.
     }
 
     public void addMenuItem(JMenu menu, String name, String command) {
@@ -614,42 +596,5 @@ public class MenuBar extends JMenuBar implements IBusListener {
             }
         });
         menu.add(item);
-    }
-
-
-    private static class CategoryMenuItem extends JMenu {
-        private final VisualizationCategory category;
-
-        public CategoryMenuItem(VisualizationCategory category) {
-            super(category.getLabel());
-            this.category = category;
-        }
-
-        public VisualizationCategory getCategory() {
-            return category;
-        }
-
-        public boolean isEmpty() {
-            return getItemCount() == 0;
-        }
-    }
-
-    private static class VisualizationMenuItem extends JMenuItem {
-        private final String sortName;
-        private final IVisualizationHandler handler;
-
-        public VisualizationMenuItem(String name, IVisualizationHandler handler) {
-            super(name);
-            this.sortName = name.toLowerCase();
-            this.handler = handler;
-        }
-
-        public String getName() {
-            return sortName;
-        }
-
-        public IVisualizationHandler getHandler() {
-            return handler;
-        }
     }
 }
