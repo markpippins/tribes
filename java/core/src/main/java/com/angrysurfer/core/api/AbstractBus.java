@@ -1,61 +1,30 @@
 package com.angrysurfer.core.api;
 
-import com.angrysurfer.core.model.Player;
-import com.angrysurfer.core.service.LogManager;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.angrysurfer.core.model.Player;
+import com.angrysurfer.core.service.LogManager;
 
 public abstract class AbstractBus {
 
     public static String WILDCARD = "*";
     static Logger logger = LoggerFactory.getLogger(Player.class.getCanonicalName());
     private final Map<String, List<IBusListener>> listenerMap = new ConcurrentHashMap<>();
-
     private final List<IBusListener> listeners = new CopyOnWriteArrayList<>();
     private final LogManager logManager = LogManager.getInstance();
 
-    // Thread pool for asynchronous command processing
-    private final ExecutorService commandExecutor;
-    private final boolean asyncProcessing;
+    protected AbstractBus() {}
 
-    protected AbstractBus() {
-        this(true, Runtime.getRuntime().availableProcessors());
-        // DON'T call register(this) here - it's unsafe during initialization
-        // If subclasses need to register with themselves, they should do it explicitly
-        // after their fields are initialized
-    }
-
-    public AbstractBus(boolean asyncProcessing, int threadPoolSize) {
-        this.asyncProcessing = asyncProcessing;
-
-        // Create named thread factory for better debugging
-        ThreadFactory threadFactory = new ThreadFactory() {
-            private final AtomicInteger threadNumber = new AtomicInteger(1);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r, getClass().getSimpleName() + "-" + threadNumber.getAndIncrement());
-                t.setDaemon(true); // Don't prevent JVM from exiting
-                return t;
-            }
-        };
-
-        // Create thread pool if using async processing
-        if (asyncProcessing) {
-            commandExecutor = Executors.newFixedThreadPool(threadPoolSize, threadFactory);
-            logManager.info("AbstractBus", "Created async command bus with " + threadPoolSize + " threads");
-        } else {
-            commandExecutor = null;
-            logManager.info("AbstractBus", "Created synchronous command bus");
-        }
-
-        // Register self to handle logging commands
-        // register(this);
-    }
+    public AbstractBus(boolean asyncProcessing, int threadPoolSize) {}
 
     public void register(IBusListener listener, String[] commands) {
         for (String action : commands) {
@@ -86,23 +55,19 @@ public abstract class AbstractBus {
     }
 
     public void publish(String command, Object sender, Object data) {
-        // System.out.println("AbstractBus: Publishing command " + command + " to " +
-        // listeners.size() + " listeners");
         Command cmd = new Command(command, sender, data);
 
-        List<IBusListener> listeners = listenerMap.get(command);
-        if (listeners != null) {
-            for (IBusListener listener : listeners) {
-                // logger.info("Notifying: " + listener.getClass().getSimpleName());
+        List<IBusListener> cmdListeners = listenerMap.get(command);
+        if (cmdListeners != null) {
+            for (IBusListener listener : cmdListeners) {
                 if (!listener.equals(sender))
                     listener.onAction(cmd);
             }
         }
 
-        listeners = listenerMap.get("*");
-        if (listeners != null) {
-            for (IBusListener listener : listeners) {
-                // logger.info("Notifying: " + listener.getClass().getSimpleName());
+        List<IBusListener> wildcardListeners = listenerMap.get("*");
+        if (wildcardListeners != null) {
+            for (IBusListener listener : wildcardListeners) {
                 if (!listener.equals(sender))
                     listener.onAction(cmd);
             }
@@ -110,31 +75,15 @@ public abstract class AbstractBus {
     }
 
     /**
-     * Publishes a command to be processed by all registered listeners.
-     * Depending on the bus configuration, processing will happen either
-     * synchronously in the current thread or asynchronously in the thread pool.
-     *
-     * @param action The command to publish
+     * Publishes a command synchronously on the calling thread.
+     * UI listeners should marshal to EDT themselves if needed.
      */
     public void publish(Command action) {
         if (action == null) {
             logManager.error("CommandBus", "Attempted to publish null action");
             return;
         }
-
-        // String sender = action.getSender() != null ? action.getSender().getClass().getSimpleName() : "unknown";
-        // String dataType = action.getData() != null ? action.getData().getClass().getSimpleName() : "null";
-
-        // logManager.debug("CommandBus",
-        //         String.format("Publishing command: %s from: %s data: %s",
-        //                 action.getCommand(), sender, dataType));
-
-        // Use executor service if running async, otherwise process in current thread
-        if (asyncProcessing && commandExecutor != null) {
-            commandExecutor.submit(() -> processCommand(action));
-        } else {
-            processCommand(action);
-        }
+        processCommand(action);
     }
 
     /**
@@ -217,21 +166,7 @@ public abstract class AbstractBus {
      * Shutdown the command executor gracefully
      */
     public void shutdown() {
-        if (commandExecutor != null && !commandExecutor.isShutdown()) {
-            logManager.info("AbstractBus", "Shutting down command executor");
-            commandExecutor.shutdown();
-            try {
-                // Wait for existing tasks to terminate
-                if (!commandExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    logManager.warn("AbstractBus", "Command executor did not terminate in time, forcing shutdown");
-                    commandExecutor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                logManager.error("AbstractBus", "Command executor shutdown was interrupted", e);
-                commandExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+        // no-op: synchronous bus has no executor to shut down
     }
 
 //    @Override

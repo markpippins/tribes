@@ -1,24 +1,26 @@
 package com.angrysurfer.core.redis;
 
-import com.angrysurfer.core.api.CommandBus;
-import com.angrysurfer.core.api.Commands;
-import com.angrysurfer.core.model.Player;
-import com.angrysurfer.core.model.Session;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import lombok.Getter;
-import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.angrysurfer.core.api.CommandBus;
+import com.angrysurfer.core.api.Commands;
+import com.angrysurfer.core.model.Player;
+import com.angrysurfer.core.model.Session;
+import com.angrysurfer.core.util.ErrorHandler;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import lombok.Getter;
+import lombok.Setter;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 @Getter
 @Setter
@@ -78,7 +80,7 @@ public class SessionHelper {
             }
             return null;
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error finding session: " + e.getMessage());
+            ErrorHandler.logError("SessionHelper", "Error finding session: " + e.getMessage(), e);
             throw new RuntimeException("Failed to find session", e);
         }
     }
@@ -122,7 +124,7 @@ public class SessionHelper {
                     session.getId(),
                     players != null ? players.size() : 0));
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error saving session: " + e.getMessage());
+            ErrorHandler.logError("SessionHelper", "Error saving session: " + e.getMessage(), e);
             throw new RuntimeException("Failed to save session", e);
         }
     }
@@ -135,7 +137,7 @@ public class SessionHelper {
                 try {
                     ids.add(Long.parseLong(key.split(":")[1]));
                 } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(null, "Invalid session key: " + key);
+                    ErrorHandler.logError("SessionHelper", "Invalid session key: " + key);
                 }
             }
             return ids;
@@ -180,7 +182,7 @@ public class SessionHelper {
             CommandBus.getInstance().publish(Commands.SESSION_DELETED, this, sessionId);
             logger.info("Successfully deleted session " + sessionId + " and all related entities");
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error deleting session " + sessionId + ": " + e.getMessage());
+            ErrorHandler.logError("SessionHelper", "Error deleting session " + sessionId + ": " + e.getMessage(), e);
             throw new RuntimeException("Failed to delete session", e);
         }
     }
@@ -206,7 +208,7 @@ public class SessionHelper {
             logger.info("Created new session with ID: " + session.getId());
             return session;
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error creating new session: " + e.getMessage());
+            ErrorHandler.logError("SessionHelper", "Error creating new session: " + e.getMessage(), e);
             throw new RuntimeException("Failed to create new session", e);
         }
     }
@@ -293,7 +295,7 @@ public class SessionHelper {
 
             logger.warn("No session found for player {} of type {}", player.getId(), playerType);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error finding session for player: " + e.getMessage());
+            ErrorHandler.logError("SessionHelper", "Error finding session for player: " + e.getMessage(), e);
         }
         return null;
     }
@@ -329,7 +331,7 @@ public class SessionHelper {
             logger.info("Successfully added player " + player.getId() +
                     " (" + player.getName() + ") to session " + session.getId());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error adding player to session: " + e.getMessage());
+            ErrorHandler.logError("SessionHelper", "Error adding player to session: " + e.getMessage(), e);
             throw new RuntimeException("Failed to add player to session", e);
         }
     }

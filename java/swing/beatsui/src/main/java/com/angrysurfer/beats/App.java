@@ -1,5 +1,14 @@
 package com.angrysurfer.beats;
 
+import java.util.List;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.angrysurfer.beats.util.UIErrorHandler;
 import com.angrysurfer.core.Constants;
 import com.angrysurfer.core.api.Command;
@@ -10,13 +19,14 @@ import com.angrysurfer.core.config.FrameState;
 import com.angrysurfer.core.model.InstrumentWrapper;
 import com.angrysurfer.core.redis.InstrumentHelper;
 import com.angrysurfer.core.redis.RedisService;
-import com.angrysurfer.core.service.*;
+import com.angrysurfer.core.service.DeviceManager;
+import com.angrysurfer.core.service.InstrumentManager;
+import com.angrysurfer.core.service.InternalSynthManager;
+import com.angrysurfer.core.service.PlayerManager;
+import com.angrysurfer.core.service.SessionManager;
+import com.angrysurfer.core.service.SoundbankManager;
+import com.angrysurfer.core.service.UserConfigManager;
 import com.formdev.flatlaf.FlatLightLaf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.util.List;
 
 public class App implements IBusListener {
 
@@ -133,59 +143,54 @@ public class App implements IBusListener {
         }
     }
 
-    private static void initializeServices() {
-        try {
-            // Initialize RedisService first
-            RedisService redisService = RedisService.getInstance();
-            logger.info("Redis service initialized");
-            splash.completeTask("Connected to database");
+    private static void initializeServices() throws Exception {
+        // Initialize RedisService first
+        RedisService redisService = RedisService.getInstance();
+        logger.info("Redis service initialized");
+        splash.completeTask("Connected to database");
 
-            // Initialize MIDI device manager
-            DeviceManager deviceManager = DeviceManager.getInstance();
-            deviceManager.refreshDeviceList();
-            splash.completeTask("Detected MIDI devices");
+        // Initialize MIDI device manager
+        DeviceManager deviceManager = DeviceManager.getInstance();
+        deviceManager.refreshDeviceList();
+        splash.completeTask("Detected MIDI devices");
 
-            // Initialize SoundbankManager BEFORE InternalSynthManager
-            SoundbankManager.getInstance().initializeSoundbanks();
-            SoundbankManager.getInstance().ensureSoundbanksLoaded();
-            splash.completeTask("Loaded soundbanks");
+        // Initialize SoundbankManager BEFORE InternalSynthManager
+        SoundbankManager.getInstance().initializeSoundbanks();
+        SoundbankManager.getInstance().ensureSoundbanksLoaded();
+        splash.completeTask("Loaded soundbanks");
 
-            // Initialize synth engine - now using InternalSynthManager
-            InternalSynthManager.getInstance().initializeSynthesizer();
-            SoundbankManager.getInstance().ensureSoundbanksLoaded();
-            // InternalSynthManager.getInstance().loadDefaultSoundbank();
-            splash.completeTask("Loaded internal synthesizer");
+        // Initialize synth engine - now using InternalSynthManager
+        InternalSynthManager.getInstance().initializeSynthesizer();
+        SoundbankManager.getInstance().ensureSoundbanksLoaded();
+        // InternalSynthManager.getInstance().loadDefaultSoundbank();
+        splash.completeTask("Loaded internal synthesizer");
 
-            // Initialize instrument management
-            InstrumentHelper instrumentHelper = redisService.getInstrumentHelper();
-            List<InstrumentWrapper> instruments = instrumentHelper.findAllInstruments();
-            logger.info("Found {} instruments in Redis", instruments.size());
+        // Initialize instrument management
+        InstrumentHelper instrumentHelper = redisService.getInstrumentHelper();
+        List<InstrumentWrapper> instruments = instrumentHelper.findAllInstruments();
+        logger.info("Found {} instruments in Redis", instruments.size());
 
-            // Initialize InstrumentManager (if not already)
-            InstrumentManager.getInstance().refreshInstruments();
-            splash.completeTask("Loaded instrument configurations");
+        // Initialize InstrumentManager (if not already)
+        InstrumentManager.getInstance().refreshInstruments();
+        splash.completeTask("Loaded instrument configurations");
 
-            UserConfigManager.getInstance();
-            UserConfigManager.getInstance().initialize();
+        UserConfigManager.getInstance();
+        UserConfigManager.getInstance().initialize();
 
-            splash.completeTask("Loaded user configuration");
+        splash.completeTask("Loaded user configuration");
 
-            // Initialize SessionManager AFTER instruments are loaded
-            SessionManager sessionManager = SessionManager.getInstance();
-            sessionManager.initialize();
-            logger.info("Session manager initialized");
-            splash.completeTask("Initialized session manager");
+        // Initialize SessionManager AFTER instruments are loaded
+        SessionManager sessionManager = SessionManager.getInstance();
+        sessionManager.initialize();
+        logger.info("Session manager initialized");
+        splash.completeTask("Initialized session manager");
 
-            // Ensure channel consistency in PlayerManager
-            PlayerManager.getInstance().ensureChannelConsistency();
+        // Ensure channel consistency in PlayerManager
+        PlayerManager.getInstance().ensureChannelConsistency();
 
-            // Signal system ready - this will trigger waiting sequencers to initialize
-            CommandBus.getInstance().publish(Commands.SYSTEM_READY, App.class, null);
-            logger.info("System initialization complete");
-
-        } catch (Exception e) {
-            handleInitializationFailure("Failed to initialize services", e);
-        }
+        // Signal system ready - this will trigger waiting sequencers to initialize
+        CommandBus.getInstance().publish(Commands.SYSTEM_READY, App.class, null);
+        logger.info("System initialization complete");
     }
 
     private static void handleInitializationFailure(String errorMessage, Exception e) {
