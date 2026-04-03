@@ -60,4 +60,4 @@ MIT — do what you want, just give credit.
 
 ## 🙌 Credits
 
-Built with coffee and late nights by [Mark Pippins].
+Built with coffee and late nights by Mark Pippins.
