@@ -1,7 +1,0 @@
-<!--<ngx-slider class="control-slider">{{label}}</ngx-slider>-->
-<div class="slider-box">
-  <!-- <mat-checkbox *ngIf="configMode == true">{{label}}</mat-checkbox>-->
-  <mat-label *ngIf="configMode == false" class="label">{{label}}</mat-label>
-  <input [(ngModel)]="value" type="range" min="1" max="127" value=1 class="slider" (change)="onChange()">
-</div>
- <!-- [(value)]="value" [options]="options" -->
